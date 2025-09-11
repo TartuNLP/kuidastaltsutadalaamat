@@ -8,11 +8,9 @@ from collections import defaultdict
 
 from accelerate import Accelerator
 
-from data import LazyTokenizingInferenceDataset
 from inference import filter_tr_pair
 from metrics import SMUGRI_RES
-from aux import log, load_tokenizer, load_model, env_stuff
-from promptops import PF_TR_FLT
+from aux import log
 
 # hi-res languages and how likely we should be to translate into them from other hi-res langs
 HI_RES_WITH_WEIGHTS = {"English": 13, "Estonian": 11, "Finnish": 8, "Hungarian": 3, "Latvian": 2,
