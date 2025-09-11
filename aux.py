@@ -235,6 +235,7 @@ def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
 def load_tokenizer(mdl_id, accelerator=None):
     log(f"Load tokenizer", accelerator=accelerator)
     tokenizer = AutoTokenizer.from_pretrained(mdl_id)
+    tokenizer.padding_side = "left"
 
     tokenizer.pad_token = "<|reserved_special_token_100|>"
     tokenizer.mask_token = "<|reserved_special_token_130|>"

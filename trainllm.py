@@ -210,7 +210,7 @@ def simple_train():
     training_args = get_training_args(cmd_args, acc)
 
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
-    tokenizer.padding_side = "left"
+
     model = load_model(cmd_args.mdl_id, device, acc, attention=("eager" if TESTING_LOCALLY else "flash_attention_2"))
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
