@@ -196,6 +196,7 @@ def get_training_args(cmdline_args, acc):
         #group_by_length=True,
         log_level="debug",
         optim="adamw_torch",
+        accelerator_config={ 'dispatch_batches': False },
         #gradient_checkpointing=True,
         #dataloader_persistent_workers=True
         **dpspd_conf,
@@ -236,7 +237,7 @@ def simple_train():
     log(f"Preparing to train", accelerator=acc)
 
     clbks = [StepTimerCallback] if acc.is_main_process else []
-    TrCl = LoggingKillingTrainer if TESTING_LOCALLY else Trainer
+    TrCl = Trainer #LoggingKillingTrainer if TESTING_LOCALLY else Trainer
 
     trainer = TrCl(
         model=model,
