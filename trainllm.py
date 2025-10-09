@@ -42,6 +42,7 @@ def _cmdline_args():
                             "gradckpt": False,
                             "memcheckkamikaze": False,
                             "sft_output_field": "none",
+                            "streamtrain": False,
                             "sft_delim": "none"})
 
     # if the directory args.save_location already exists, raise an exception:

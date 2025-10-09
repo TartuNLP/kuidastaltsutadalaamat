@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 import promptops
 
-import json
+import json, ijson
 import sys
 
 from random import shuffle
 
-from torch.utils.data import Dataset as TorchDataset, DataLoader
+from torch.utils.data import Dataset as TorchDataset, IterableDataset
 
 from aux import log
 
@@ -34,12 +34,30 @@ def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
 
     return tokens
 
+
+def prep_tokenized_prompt_from_entry(entry, selfx):
+    # Return plain Python lists; let the collator pad & build labels.
+
+    prompt = promptops.prep_prompt(entry, selfx.prompt_format)
+    result = tokenize_str(selfx.tokenizer, prompt)
+    result['special_tokens_mask'] = [False] * len(result['input_ids'])
+    if selfx.sft_delim is not None:
+        delim_id = selfx.tokenizer.convert_tokens_to_ids(selfx.sft_delim)
+        delim_idx = result['input_ids'].index(delim_id)
+        result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+
+    elif selfx.sft_output_field is not None:
+        no_output_prompt = promptops.prep_prompt({**entry, selfx.sft_output_field: ''}, selfx.prompt_format)
+        no_output_prompt_tok = tokenize_str(selfx.tokenizer, no_output_prompt)
+        len_to_mask = len(no_output_prompt_tok['input_ids'])
+        result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
+
+    return result
+
+
 """
 Load texts into memory and allow to loop through it,
 returning tokenized tensors.
-
-Currently no support for text data that does not fit into memory,
-need to add it. Or do HF datasets have something out of the box? 
 """
 class LazyTokenizingDataset(TorchDataset):
     def __init__(self, texts, tokenizer, max_length=512, prompt_format="raw", sft_delim=None, sft_output_field=None):
@@ -54,25 +72,48 @@ class LazyTokenizingDataset(TorchDataset):
         return len(self.texts)
 
     def __getitem__(self, idx):
-        # Return plain Python lists; let the collator pad & build labels.
-        entry = self.texts[idx]
+        return prep_tokenized_prompt_from_entry(self.texts[idx], self)
 
-        prompt = promptops.prep_prompt(entry, self.prompt_format)
-        result = tokenize_str(self.tokenizer, prompt)
-        result['special_tokens_mask'] = [False] * len(result['input_ids'])
 
-        if self.sft_delim is not None:
-            delim_id = self.tokenizer.convert_tokens_to_ids(self.sft_delim)
-            delim_idx = result['input_ids'].index(delim_id)
-            result['special_tokens_mask'][:delim_idx+1] = [True] * (delim_idx+1)
+"""
+Go through texts iteratively without loading into memory,
+returning tokenized tensors for readily formed prompts.
+"""
+class LazyTokenizingIterDataset(IterableDataset):
+    def __init__(self, path, tokenizer, max_length=512, prompt_format="raw", sft_delim=None, sft_output_field=None):
+        self.path = path
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+        self.prompt_format = prompt_format
+        self.sft_delim = sft_delim
+        self.sft_output_field = sft_output_field
 
-        elif self.sft_output_field is not None:
-            no_output_prompt = promptops.prep_prompt({ ** entry, self.sft_output_field: '' }, self.prompt_format)
-            no_output_prompt_tok =  tokenize_str(self.tokenizer, no_output_prompt)
-            len_to_mask = len(no_output_prompt_tok['input_ids'])
-            result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
+        self.ijson_iter = None
+
+        self.data_len = self._get_data_len()
+
+    def _get_data_len(self):
+        result = 0
+
+        with open(self.path, "r") as fh0:
+            for _ in ijson.items(fh0, "item"):
+                result += 1
 
         return result
+
+    def __len__(self):
+        return self.data_len
+
+    def __iter__(self):
+        fh = open(self.path, "r")
+        self.ijson_iter = ijson.items(fh, "item")
+
+        return self
+
+    def __next__(self):
+        # Return plain Python lists; let the collator pad & build labels.
+        entry = next(self.ijson_iter)
+        return prep_tokenized_prompt_from_entry(entry, self)
 
 
 class LazyTokenizingInferenceDataset(TorchDataset):
@@ -136,14 +177,21 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 
 def load_training_data(path, tokenizer, cmd_args):
-    with open(path, "r") as f:
-        data = json.load(f)
+    if cmd_args.streamtrain:
+        train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
+                                               cmd_args.max_length,
+                                               cmd_args.prompt_format,
+                                               cmd_args.sft_delim,
+                                               cmd_args.sft_output_field)
+    else:
+        with open(path, "r") as f:
+            data = json.load(f)
 
-    train_set_iter = LazyTokenizingDataset(data, tokenizer,
-                                           cmd_args.max_length,
-                                           cmd_args.prompt_format,
-                                           cmd_args.sft_delim,
-                                           cmd_args.sft_output_field)
+        train_set_iter = LazyTokenizingDataset(data, tokenizer,
+                                               cmd_args.max_length,
+                                               cmd_args.prompt_format,
+                                               cmd_args.sft_delim,
+                                               cmd_args.sft_output_field)
 
     return train_set_iter
 
