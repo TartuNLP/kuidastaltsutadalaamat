@@ -111,7 +111,7 @@ class LazyTokenizingIterDataset(IterableDataset):
         return self
 
     def __next__(self):
-        # Return plain Python lists; let the collator pad & build labels.
+        #Return plain Python lists; let the collator pad & build labels.
         entry = next(self.ijson_iter)
         return prep_tokenized_prompt_from_entry(entry, self)
 
