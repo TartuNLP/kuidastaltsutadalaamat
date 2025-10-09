@@ -187,6 +187,8 @@ def get_training_args(cmdline_args, acc):
         save_strategy="epoch",
         disable_tqdm=True,
         report_to="none",
+        lr_scheduler_type = "polynomial",
+        weight_decay = 0.1,
         # Optional but often helpful on LUMI/ROCm if you enable it in your args:
         bf16=(not TESTING_LOCALLY),
         ddp_find_unused_parameters=False,
