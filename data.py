@@ -54,6 +54,7 @@ def prep_tokenized_prompt_from_entry(entry, selfx):
             result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
 
         return result
+
     except:
         log("Broken data entry, returning a dummy instead")
         prompt = "dummy"
