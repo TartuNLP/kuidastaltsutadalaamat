@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+from torch.utils.data import SequentialSampler
 
 import promptops
 from aux import log, CmdlineArgs, load_model, load_tokenizer, env_stuff
 from data import load_training_data
-
+import types
 
 import subprocess
 import sys
@@ -163,6 +164,7 @@ def get_fsdp_conf(cmdline_args):
 
 
 def get_training_args(cmdline_args, acc):
+    #auto_find_batch_size
     world_size = acc.num_processes
 
     assert cmdline_args.batch_size % (cmdline_args.nr_sents_per_gpu * world_size) == 0, \
@@ -247,6 +249,8 @@ def simple_train():
         data_collator=data_collator,
         callbacks=clbks,
     )
+
+    trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
 
     logging.set_verbosity_debug()
 
