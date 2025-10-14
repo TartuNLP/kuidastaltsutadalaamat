@@ -120,14 +120,15 @@ class LazyTokenizingIterDataset(TorchDataset):
             raise IndexError('Current index should not be that much behind the requested index')
 
         item = None
+
         while self._curr_idx < idx:
             self._curr_idx += 1
             item = next(self.ijson_iter)
-        if item is not None:
-            return item
-        else:
+
+        if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
 
+        return prep_tokenized_prompt_from_entry(item, self)
 
     """
     def __iter__(self):
