@@ -38,21 +38,28 @@ def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
 def prep_tokenized_prompt_from_entry(entry, selfx):
     # Return plain Python lists; let the collator pad & build labels.
 
-    prompt = promptops.prep_prompt(entry, selfx.prompt_format)
-    result = tokenize_str(selfx.tokenizer, prompt)
-    result['special_tokens_mask'] = [False] * len(result['input_ids'])
-    if selfx.sft_delim is not None:
-        delim_id = selfx.tokenizer.convert_tokens_to_ids(selfx.sft_delim)
-        delim_idx = result['input_ids'].index(delim_id)
-        result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+    try:
+        prompt = promptops.prep_prompt(entry, selfx.prompt_format)
+        result = tokenize_str(selfx.tokenizer, prompt)
+        result['special_tokens_mask'] = [False] * len(result['input_ids'])
+        if selfx.sft_delim is not None:
+            delim_id = selfx.tokenizer.convert_tokens_to_ids(selfx.sft_delim)
+            delim_idx = result['input_ids'].index(delim_id)
+            result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
 
-    elif selfx.sft_output_field is not None:
-        no_output_prompt = promptops.prep_prompt({**entry, selfx.sft_output_field: ''}, selfx.prompt_format)
-        no_output_prompt_tok = tokenize_str(selfx.tokenizer, no_output_prompt)
-        len_to_mask = len(no_output_prompt_tok['input_ids'])
-        result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
+        elif selfx.sft_output_field is not None:
+            no_output_prompt = promptops.prep_prompt({**entry, selfx.sft_output_field: ''}, selfx.prompt_format)
+            no_output_prompt_tok = tokenize_str(selfx.tokenizer, no_output_prompt)
+            len_to_mask = len(no_output_prompt_tok['input_ids'])
+            result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
 
-    return result
+        return result
+    except:
+        prompt = "dummy"
+        result = tokenize_str(selfx.tokenizer, prompt)
+        return result
+
+
 
 
 """
