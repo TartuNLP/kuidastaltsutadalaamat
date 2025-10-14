@@ -79,18 +79,21 @@ class LazyTokenizingDataset(TorchDataset):
 Go through texts iteratively without loading into memory,
 returning tokenized tensors for readily formed prompts.
 """
-class LazyTokenizingIterDataset(IterableDataset):
-    def __init__(self, path, tokenizer, max_length=512, prompt_format="raw", sft_delim=None, sft_output_field=None):
+class LazyTokenizingIterDataset(TorchDataset):
+    def __init__(self, path, tokenizer, max_dist=10000, max_length=512, prompt_format="raw", sft_delim=None, sft_output_field=None):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.prompt_format = prompt_format
         self.sft_delim = sft_delim
         self.sft_output_field = sft_output_field
+        self.max_dist = max_dist
 
         self.ijson_iter = None
 
         self.data_len = self._get_data_len()
+
+        self._curr_idx = 1e400
 
     def _get_data_len(self):
         result = 0
@@ -104,6 +107,29 @@ class LazyTokenizingIterDataset(IterableDataset):
     def __len__(self):
         return self.data_len
 
+    def __getitem__(self, idx):
+        if self._curr_idx > idx:
+            log("Restarting iterator")
+
+            fh = open(self.path, "r")
+            self.ijson_iter = ijson.items(fh, "item")
+
+            self._curr_idx = -1
+
+        elif idx - self._curr_idx > self.max_dist:
+            raise IndexError('Current index should not be that much behind the requested index')
+
+        item = None
+        while self._curr_idx < idx:
+            self._curr_idx += 1
+            item = next(self.ijson_iter)
+        if item is not None:
+            return item
+        else:
+            raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
+
+
+    """
     def __iter__(self):
         fh = open(self.path, "r")
         self.ijson_iter = ijson.items(fh, "item")
@@ -114,6 +140,7 @@ class LazyTokenizingIterDataset(IterableDataset):
         #Return plain Python lists; let the collator pad & build labels.
         entry = next(self.ijson_iter)
         return prep_tokenized_prompt_from_entry(entry, self)
+    """
 
 
 class LazyTokenizingInferenceDataset(TorchDataset):
@@ -179,6 +206,7 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 def load_training_data(path, tokenizer, cmd_args):
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
+                                               cmd_args.batch_size+3,
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
