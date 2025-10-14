@@ -55,6 +55,7 @@ def prep_tokenized_prompt_from_entry(entry, selfx):
 
         return result
     except:
+        log("Broken data entry, returning a dummy instead")
         prompt = "dummy"
         result = tokenize_str(selfx.tokenizer, prompt)
         return result
