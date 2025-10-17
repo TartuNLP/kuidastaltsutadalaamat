@@ -162,7 +162,6 @@ def get_fsdp_conf(cmdline_args):
     else:
         return {}
 
-
 def get_training_args(cmdline_args, acc):
     #auto_find_batch_size
     world_size = acc.num_processes
