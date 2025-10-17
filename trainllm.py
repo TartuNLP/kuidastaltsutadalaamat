@@ -186,7 +186,7 @@ def get_training_args(cmdline_args, acc):
         save_total_limit=10,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
-        save_strategy="epoch",
+        save_strategy="steps",
         disable_tqdm=True,
         report_to="none",
         lr_scheduler_type = "polynomial",
