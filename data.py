@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import promptops
 
-import json, ijson
+import json
 import sys
 
 from random import shuffle
@@ -105,10 +105,11 @@ class LazyTokenizingIterDataset(TorchDataset):
         self._curr_idx = 1e400
 
     def _get_data_len(self):
+        from ijson import items
         result = 0
 
         with open(self.path, "r") as fh0:
-            for _ in ijson.items(fh0, "item"):
+            for _ in items(fh0, "item"):
                 result += 1
 
         return result
@@ -117,11 +118,13 @@ class LazyTokenizingIterDataset(TorchDataset):
         return self.data_len
 
     def __getitem__(self, idx):
+        from ijson import items
+
         if self._curr_idx > idx:
             log("Restarting iterator")
 
             fh = open(self.path, "r")
-            self.ijson_iter = ijson.items(fh, "item")
+            self.ijson_iter = items(fh, "item")
 
             self._curr_idx = -1
 
