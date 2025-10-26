@@ -25,6 +25,7 @@ TESTING_LOCALLY = False
 
 MEM_CHECK_KAMIKAZE = False
 
+
 """
 1/3 This simply reads in command-line arguments 
 """
@@ -66,6 +67,7 @@ def _cmdline_args():
 
     return result
 
+
 """
 2/3 This here is used in training in order to report timing and predictions 
 """
@@ -106,7 +108,7 @@ class StepTimerCallback(TrainerCallback):
         # you can use logging.get_logger(...) instead of print
         print(f"[step {state.global_step}/{state.max_steps}] took {elapsed}, avg {avg}; approx {prediction} remaining")
 
-        if MEM_CHECK_KAMIKAZE and state.global_step >= 103:
+        if MEM_CHECK_KAMIKAZE and state.global_step >= 13:
             rocm_output = subprocess.check_output(['rocm-smi'])
 
             print(rocm_output.decode('utf8'))
@@ -114,10 +116,10 @@ class StepTimerCallback(TrainerCallback):
             log(f"memory measurement done!")
             raise KamikazeException
 
+
 """
 3/3 Finally, the filling of TrainingArguments and the launching of Trainer:
 """
-
 
 def get_deepspeed_conf(cmdline_args, accum_steps):
     if cmdline_args.sharing == "deepspeed":
@@ -182,7 +184,7 @@ def get_training_args(cmdline_args, acc):
         gradient_accumulation_steps=accum_steps,
         num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
-        save_total_limit=10,
+        save_total_limit=100,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
         save_strategy="steps",
