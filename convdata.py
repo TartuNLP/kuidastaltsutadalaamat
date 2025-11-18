@@ -16,7 +16,8 @@ def parse_lang(lang_code):
         'ru': 'Russian',
         'sv': 'Swedish',
         'uk': 'Ukrainian',
-        'zh': 'Chinese'
+        'zh': 'Chinese',
+        'pl': 'Polish'
     }
 
     return dct[lang_code]
