@@ -98,6 +98,10 @@ if __name__ == '__main__':
         smugri_data = json.load(sys.stdin)
 
         for entry in smugri_data:
-            if not is_hi(entry['src_lang']) or not is_hi(entry['tgt_lang']):
-                gen_out_line(sys.stdout, **entry)
+            if is_hi(entry['src_lang']) and is_hi(entry['tgt_lang']):
+                comet = 42
+            else:
+                comet = None
+
+            gen_out_line(sys.stdout, **entry, comet=comet)
 
