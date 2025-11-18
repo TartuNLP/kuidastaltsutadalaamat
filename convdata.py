@@ -72,6 +72,19 @@ def neurotolge_json_to_jsonl(input_file):
                 gen_out_line(fh_out, entry['src'], entry['mt'], lang_out, lang_in, entry['COMET'])
 
 
+def is_hi(l):
+    if l.lower() in { 'et', 'en', 'lv', 'ru', 'no', 'fi', 'lt', 'fr', 'de', 'sv',
+                      'est', 'eng', 'lvs', 'lav', 'rus', 'nor', 'fin', 'lit', 'fra', 'deu', 'swe' }:
+        return True
+
+    for lk in ['english', 'estonian', 'russian', 'latvian', 'finnish', 'lithuanian',
+               'swedish', 'norwegian', 'french', 'german', 'swedish']:
+        if lk in l.lower():
+            return True
+
+    return False
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         # convert Neurotolge json files to jsonl for training
@@ -85,5 +98,6 @@ if __name__ == '__main__':
         smugri_data = json.load(sys.stdin)
 
         for entry in smugri_data:
-            gen_out_line(sys.stdout, **entry)
+            if not is_hi(entry['src_lang']) or not is_hi(entry['tgt_lang']):
+                gen_out_line(sys.stdout, **entry)
 
