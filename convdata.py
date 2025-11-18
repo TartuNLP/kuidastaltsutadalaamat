@@ -31,15 +31,17 @@ def parse_langs(raw_lp):
     return parse_lang(tgt_lang_code), parse_lang(src_lang_code)
 
 
-def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, comet):
+def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task = "translate", comet = None):
     data = {
         "src_segm": src_segm,
         "src_lang": src_lang,
         "tgt_segm": tgt_segm,
         "tgt_lang": tgt_lang,
-        "task": "translate",
-        "COMET": comet
+        "task": task
     }
+
+    if comet is not None:
+        data["COMET"] = comet
 
     fh_out.write(json.dumps(data))
     fh_out.write("\n")
@@ -71,8 +73,17 @@ def neurotolge_json_to_jsonl(input_file):
 
 
 if __name__ == '__main__':
-    all_data = []
+    if len(sys.argv) > 1:
+        # convert Neurotolge json files to jsonl for training
+        all_data = []
 
-    for input_file in sys.argv[1:]:
-        print(f"Processing {input_file}")
-        neurotolge_json_to_jsonl(input_file)
+        for input_file in sys.argv[1:]:
+            print(f"Processing {input_file}")
+            neurotolge_json_to_jsonl(input_file)
+    else:
+        # convert one Smugri json file to jsonl for training
+        smugri_data = json.load(sys.stdin)
+
+        for entry in smugri_data:
+            gen_out_line(sys.stdout, **entry)
+
