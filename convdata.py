@@ -2,6 +2,8 @@
 import json
 import sys
 
+from ijson import items
+
 def parse_lang(lang_code, syn):
     dct = {
         'ar': 'Arabic',
@@ -53,7 +55,7 @@ def neurotolge_json_to_jsonl(input_file):
     assert input_file.endswith('.json')
 
     lp_raw, filename = input_file.split('/')
-    output_file = f"{lp_raw}-{filename}.jsonl"
+    output_file = f"{lp_raw}-{filename}l"
 
     is_synth = "synthetic" in filename
     lang_out, lang_in = parse_langs(lp_raw, is_synth)
