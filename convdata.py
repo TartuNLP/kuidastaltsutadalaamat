@@ -2,7 +2,7 @@
 import json
 import sys
 
-def parse_lang(lang_code):
+def parse_lang(lang_code, syn):
     dct = {
         'ar': 'Arabic',
         'de': 'German',
@@ -20,15 +20,16 @@ def parse_lang(lang_code):
         'pl': 'Polish'
     }
 
-    return dct[lang_code]
+    result = dct[lang_code] + (", synth" if syn else "")
+    return result
 
 
-def parse_langs(raw_lp):
+def parse_langs(raw_lp, syn):
     assert "_" in raw_lp
 
     tgt_lang_code, src_lang_code = raw_lp.split("_")
 
-    return parse_lang(tgt_lang_code), parse_lang(src_lang_code)
+    return parse_lang(tgt_lang_code, syn), parse_lang(src_lang_code, syn)
 
 
 def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task = "translate", comet = None):
@@ -54,9 +55,8 @@ def neurotolge_json_to_jsonl(input_file):
     lp_raw, filename = input_file.split('/')
     output_file = f"{lp_raw}-{filename}.jsonl"
 
-    lang_out, lang_in = parse_langs(lp_raw)
-
     is_synth = "synthetic" in filename
+    lang_out, lang_in = parse_langs(lp_raw, is_synth)
 
     with open(input_file, 'r') as fh_in, open(output_file, 'w') as fh_out:
         raw_data = json.load(fh_in)
@@ -65,6 +65,7 @@ def neurotolge_json_to_jsonl(input_file):
 
         k = list(raw_data.keys())[0]
         raw_list = raw_data[k]
+
         for entry in raw_list:
             gen_out_line(fh_out, entry['mt'], entry['src'], lang_in, lang_out, entry['COMET'])
 
