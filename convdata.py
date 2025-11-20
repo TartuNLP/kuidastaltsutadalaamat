@@ -97,17 +97,19 @@ if __name__ == '__main__':
 
         # convert one Smugri json file to jsonl for training
         print("Reading", file=sys.stderr)
-        smugri_data = items(sys.stdin, 'smugri-items')
+        flname = sys.stdin.readline().strip()
+        with open(flname, 'r') as fh_in:
+            smugri_data = items(fh_in, 'smugri-items')
 
-        print("Saving", file=sys.stderr)
-        for entryy in smugri_data:
-            if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
-                gen_out_line(sys.stdout,
-                             entryy['src_segm'],
-                             entryy['tgt_segm'],
-                             entryy['src_lang'],
-                             entryy['tgt_lang'],
-                             entryy['task'],
-                             comet_sc=None)
+            print("Saving", file=sys.stderr)
+            for entryy in smugri_data:
+                if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
+                    gen_out_line(sys.stdout,
+                                 entryy['src_segm'],
+                                 entryy['tgt_segm'],
+                                 entryy['src_lang'],
+                                 entryy['tgt_lang'],
+                                 entryy['task'],
+                                 comet_sc=None)
         print("Done", file=sys.stderr)
 
