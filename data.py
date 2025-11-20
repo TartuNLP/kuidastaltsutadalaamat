@@ -4,9 +4,7 @@ import promptops
 import json
 import sys
 
-from random import shuffle
-
-from torch.utils.data import Dataset as TorchDataset, IterableDataset
+from torch.utils.data import Dataset as TorchDataset
 
 from aux import log
 
@@ -98,33 +96,32 @@ class LazyTokenizingIterDataset(TorchDataset):
         self.sft_output_field = sft_output_field
         self.max_dist = max_dist
 
-        self.ijson_iter = None
+        self.data_iter = None
 
         self.data_len = self._get_data_len()
 
         self._curr_idx = 1e400
 
     def _get_data_len(self):
-        from ijson import items
         result = 0
+        log("Computing length")
 
         with open(self.path, "r") as fh0:
-            for _ in items(fh0, "item"):
+            for _ in fh0:
                 result += 1
 
+        log(f"Length is {result}")
         return result
 
     def __len__(self):
         return self.data_len
 
     def __getitem__(self, idx):
-        from ijson import items
-
         if self._curr_idx > idx:
             log("Restarting iterator")
 
             fh = open(self.path, "r")
-            self.ijson_iter = items(fh, "item")
+            self.data_iter = fh
 
             self._curr_idx = -1
 
@@ -135,25 +132,13 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         while self._curr_idx < idx:
             self._curr_idx += 1
-            item = next(self.ijson_iter)
+            item_rawstr = next(self.data_iter)
+            item = json.loads(item_rawstr)
 
         if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
 
         return prep_tokenized_prompt_from_entry(item, self)
-
-    """
-    def __iter__(self):
-        fh = open(self.path, "r")
-        self.ijson_iter = ijson.items(fh, "item")
-
-        return self
-
-    def __next__(self):
-        #Return plain Python lists; let the collator pad & build labels.
-        entry = next(self.ijson_iter)
-        return prep_tokenized_prompt_from_entry(entry, self)
-    """
 
 
 class LazyTokenizingInferenceDataset(TorchDataset):
