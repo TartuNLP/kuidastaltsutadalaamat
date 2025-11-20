@@ -2,8 +2,6 @@
 import json
 import sys
 
-from ijson import items
-
 def parse_lang(lang_code, syn):
     dct = {
         'ar': 'Arabic',
@@ -34,7 +32,7 @@ def parse_langs(raw_lp, syn):
     return parse_lang(tgt_lang_code, syn), parse_lang(src_lang_code, syn)
 
 
-def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task = "translate", comet = None):
+def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task="translate", comet_sc=None):
     data = {
         "src_segm": src_segm,
         "src_lang": src_lang,
@@ -44,7 +42,7 @@ def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task = "transla
     }
 
     if comet is not None:
-        data["COMET"] = comet
+        data["COMET"] = comet_sc
 
     fh_out.write(json.dumps(data))
     fh_out.write("\n")
@@ -69,10 +67,10 @@ def neurotolge_json_to_jsonl(input_file):
         raw_list = raw_data[k]
 
         for entry in raw_list:
-            gen_out_line(fh_out, entry['mt'], entry['src'], lang_in, lang_out, entry['COMET'])
+            gen_out_line(fh_out, entry['mt'], entry['src'], lang_in, lang_out, task="translate", comet_sc=entry['COMET'])
 
             if not is_synth:
-                gen_out_line(fh_out, entry['src'], entry['mt'], lang_out, lang_in, entry['COMET'])
+                gen_out_line(fh_out, entry['src'], entry['mt'], lang_out, lang_in, task="translate", comet_sc=entry['COMET'])
 
 
 def is_hi(l):
@@ -98,13 +96,16 @@ if __name__ == '__main__':
             neurotolge_json_to_jsonl(input_file)
     else:
         # convert one Smugri json file to jsonl for training
+        print("Reading", file=sys.stderr)
         smugri_data = json.load(sys.stdin)
 
-        for entry in smugri_data:
-            if is_hi(entry['src_lang']) and is_hi(entry['tgt_lang']):
+        print("Saving", file=sys.stderr)
+        for entryy in smugri_data:
+            if is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang']):
                 comet = 42
             else:
                 comet = None
 
-            gen_out_line(sys.stdout, **entry, comet=comet)
+            gen_out_line(sys.stdout, **entryy, comet_sc=comet)
+        print("Done", file=sys.stderr)
 
