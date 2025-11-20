@@ -84,6 +84,22 @@ def is_hi(l):
     return False
 
 
+def iter_stdin_json_items(fh):
+    buf = None
+    for raw_line in fh:
+        strip_line = raw_line.strip()
+        if strip_line == "{":
+            buf = raw_line
+        elif "\": \"" in strip_line:
+            buf += raw_line
+        elif strip_line == "}":
+            buf += raw_line
+
+            entr = json.loads(buf)
+
+            yield entr
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         # convert Neurotolge json files to jsonl for training
@@ -93,23 +109,16 @@ if __name__ == '__main__':
             print(f"Processing {input_file}")
             neurotolge_json_to_jsonl(input_file)
     else:
-        from ijson import items
-
         # convert one Smugri json file to jsonl for training
-        print("Reading", file=sys.stderr)
-        flname = sys.stdin.readline().strip()
-        with open(flname, 'r') as fh_in:
-            smugri_data = items(fh_in, 'smugri-items')
-
-            print("Saving", file=sys.stderr)
-            for entryy in smugri_data:
-                if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
-                    gen_out_line(sys.stdout,
-                                 entryy['src_segm'],
-                                 entryy['tgt_segm'],
-                                 entryy['src_lang'],
-                                 entryy['tgt_lang'],
-                                 entryy['task'],
-                                 comet_sc=None)
-        print("Done", file=sys.stderr)
+        #flname = sys.stdin.readline().strip()
+        #with open(flname, 'r') as fh_i:
+        for entryy in iter_stdin_json_items(sys.stdin):
+            if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
+                gen_out_line(sys.stdout,
+                             entryy['src_segm'],
+                             entryy['tgt_segm'],
+                             entryy['src_lang'],
+                             entryy['tgt_lang'],
+                             entryy['task'],
+                             comet_sc=None)
 
