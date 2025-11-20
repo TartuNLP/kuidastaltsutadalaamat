@@ -92,7 +92,7 @@ def iter_stdin_json_items(fh):
             buf = raw_line
         elif "\": \"" in strip_line:
             buf += raw_line
-        elif strip_line == "}":
+        elif strip_line == "},":
             buf += raw_line
 
             entr = json.loads(buf)
