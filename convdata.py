@@ -44,8 +44,9 @@ def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task="translate
     if comet_sc is not None:
         data["COMET"] = comet_sc
 
-    fh_out.write(json.dumps(data))
-    fh_out.write("\n")
+    if data["COMET"] is not None and data['COMET'] > 0.85:
+        fh_out.write(json.dumps(data))
+        fh_out.write("\n")
 
 
 def neurotolge_json_to_jsonl(input_file):
@@ -101,11 +102,7 @@ if __name__ == '__main__':
 
         print("Saving", file=sys.stderr)
         for entryy in smugri_data:
-            if is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang']):
-                comet = 42
-            else:
-                comet = None
-
-            gen_out_line(sys.stdout, **entryy, comet_sc=comet)
+            if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
+                gen_out_line(sys.stdout, **entryy)
         print("Done", file=sys.stderr)
 
