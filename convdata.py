@@ -93,9 +93,11 @@ if __name__ == '__main__':
             print(f"Processing {input_file}")
             neurotolge_json_to_jsonl(input_file)
     else:
+        from ijson import items
+
         # convert one Smugri json file to jsonl for training
         print("Reading", file=sys.stderr)
-        smugri_data = json.load(sys.stdin)
+        smugri_data = items(sys.stdin, 'smugri-items')
 
         print("Saving", file=sys.stderr)
         for entryy in smugri_data:
