@@ -41,7 +41,7 @@ def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task="translate
         "task": task
     }
 
-    if comet is not None:
+    if comet_sc is not None:
         data["COMET"] = comet_sc
 
     fh_out.write(json.dumps(data))
