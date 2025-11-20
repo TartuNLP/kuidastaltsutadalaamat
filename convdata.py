@@ -41,10 +41,7 @@ def gen_out_line(fh_out, src_segm, tgt_segm, src_lang, tgt_lang, task="translate
         "task": task
     }
 
-    if comet_sc is not None:
-        data["COMET"] = comet_sc
-
-    if data["COMET"] is not None and data['COMET'] > 0.85:
+    if comet_sc is None or comet_sc > 0.85:
         fh_out.write(json.dumps(data))
         fh_out.write("\n")
 
@@ -103,6 +100,12 @@ if __name__ == '__main__':
         print("Saving", file=sys.stderr)
         for entryy in smugri_data:
             if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
-                gen_out_line(sys.stdout, **entryy)
+                gen_out_line(sys.stdout,
+                             entryy['src_segm'],
+                             entryy['tgt_segm'],
+                             entryy['src_lang'],
+                             entryy['tgt_lang'],
+                             entryy['task'],
+                             comet_sc=None)
         print("Done", file=sys.stderr)
 
