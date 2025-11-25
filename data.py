@@ -46,7 +46,8 @@ def prep_tokenized_prompt_from_entry(entry, selfx):
             result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
 
         elif selfx.sft_output_field is not None:
-            no_output_prompt = promptops.prep_prompt({**entry, selfx.sft_output_field: ''}, selfx.prompt_format)
+            no_output_prompt = promptops.prep_prompt(data={**entry, selfx.sft_output_field: ''},
+                                                     prompt_format=selfx.prompt_format)
             no_output_prompt_tok = tokenize_str(selfx.tokenizer, no_output_prompt)
             len_to_mask = len(no_output_prompt_tok['input_ids'])
             result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
