@@ -148,7 +148,16 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
         return {}
 
 
+def _get_dec_layer_from_mdl(model_id):
+    if "Tower-Plus" in model_id:
+        return "Gemma2DecoderLayer"
+    else:
+        return "LlamaDecoderLayer"
+
+
 def get_fsdp_conf(cmdline_args):
+    dec_layer_name = _get_dec_layer_from_mdl(cmdline_args.mdl_id)
+
     if cmdline_args.sharing == "fsdp":
         return {'fsdp': "shard_grad_op auto_wrap",
             'fsdp_config': {
@@ -158,7 +167,7 @@ def get_fsdp_conf(cmdline_args):
                 "limit_all_gathers": True,
                 "reshard_after_forward": True,
                 #"fsdp_min_num_params": 1e7,
-                "transformer_layer_cls_to_wrap": ["LlamaDecoderLayer"],
+                "transformer_layer_cls_to_wrap": [dec_layer_name],
                 # DO NOT enable cpu_offload on LUMI unless desperate
             }}
     else:
