@@ -150,7 +150,7 @@ EUROLLM_USER_MSG_TEMPLATE = """{text_is_in}: {hi_lang}.
 #EUROLLM_USER_MSG_TEMPLATE = """{hi_segm}
 #{postinstruction}"""
 
-def prep_prompt(data, prompt_format, inference=False, tok=None):
+def prep_prompt(data, prompt_format, inference=False):
     if prompt_format in {PF_RAW, PF_RAWLINES}:
         # data is a string, return it
         return data
