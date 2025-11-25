@@ -8,6 +8,7 @@ PF_SMUGRI_LID = "smugri_lid"
 PF_ALPACA = "alpaca"
 PF_PIVOT = "eurollm_pivot"
 PF_TR_FLT = "eurollm_tr_flt"
+PF_TOWER = "tower"
 
 # now the prompt templates themselves, SMUGRI LID / MT template:
 
@@ -28,6 +29,19 @@ ALPACA_PROMPT_INF = ("Below is an instruction that describes a task, paired with
         "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n")
 
 ALPACA_PROMPT_TRAIN = (ALPACA_PROMPT_INF + "{output}")
+
+GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
+{custom_instruction}:
+{src_lang}: {src_segm}
+{tgt_lang}:<end_of_turn>
+<start_of_turn>model
+{tgt_segm}"""
+
+GEMMA_GENERATE = """<start_of_turn>user
+{custom_instruction}:
+{src_lang}:<end_of_turn>
+<start_of_turn>model
+{src_segm}"""
 
 # EuroLLM format:
 
@@ -170,6 +184,10 @@ def prep_prompt(data, prompt_format, inference=False):
         # data has instruction and input in it
         return _prep_alpaca_entry(data, inference)
 
+    elif prompt_format == PF_TOWER:
+        # using Tower models
+        return _prep_tower_entry(data, inference)
+
     else:
         raise NotImplementedError(f"Prompt format {prompt_format} is not implemented.")
 
@@ -191,6 +209,37 @@ def _prep_alpaca_entry(entry, inference=False):
     prompt = fmt.format(**entry)
     return prompt
 
+
+def _prep_tower_entry(entry, inference=False):
+    # data has task, src_lang, tgt_lang, src_segm and tgt_segm;
+    # need to make a custom_instruction field from the task field
+
+    # GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
+    # {custom_instruction}:
+    # {src_lang}: {src_segm}
+    # tgt_lang:<end_of_turn>
+    # <start_of_turn>model
+
+    instr_suf = "the following {src_lang} source text to {tgt_lang}".format(**entry)
+
+    if entry['task'] == 'translate':
+        instr = "Translate " + instr_suf
+        tmpl = GEMMA_PROMPT_TEMPLATE
+    elif entry['task'] == 'approx-translate':
+        instr = "Approximately translate " + instr_suf
+        tmpl = GEMMA_PROMPT_TEMPLATE
+    elif entry['task'] == 'generate':
+        if inference:
+            raise NotImplementedError("Inference not supported for unconditioned generation.")
+        instr = "Generate a sentence in {src_lang}".format(**entry)
+        tmpl = GEMMA_GENERATE
+    else:
+        raise NotImplementedError(f"Task {entry['task']} is not supported.")
+
+    if inference:
+        return tmpl.format(**{**entry, 'tgt_segm': ''}, custom_instruction=instr)
+    else:
+        return tmpl.format(**entry, custom_instruction=instr)
 
 def _prep_ljmf_entry(entry, fmt, inference=False):
     if inference:
