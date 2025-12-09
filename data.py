@@ -7,7 +7,7 @@ import sys
 from torch.utils.data import Dataset as TorchDataset
 
 from aux import log
-
+from datetime import datetime
 
 def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
     if for_inf:
@@ -88,7 +88,8 @@ Go through texts iteratively without loading into memory,
 returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(TorchDataset):
-    def __init__(self, path, tokenizer, max_dist=10000, max_length=512, prompt_format="raw", sft_delim=None, sft_output_field=None):
+    def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
+                 prompt_format="raw", sft_delim=None, sft_output_field=None):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -118,6 +119,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         return self.data_len
 
     def __getitem__(self, idx):
+        start_time = datetime.now()
         if self._curr_idx > idx:
             log("Restarting iterator")
 
@@ -138,8 +140,10 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
-
-        return prep_tokenized_prompt_from_entry(item, self)
+        result = prep_tokenized_prompt_from_entry(item, self)
+        passed_time = datetime.now() - start_time
+        log(f"Tokenizing took {passed_time}")
+        return result
 
 
 class LazyTokenizingInferenceDataset(TorchDataset):

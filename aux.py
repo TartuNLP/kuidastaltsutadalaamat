@@ -209,12 +209,6 @@ class CmdlineArgs:
     def __repr__(self):
         return self.__str__()
 
-if __name__ == "__main__":
-    for dname in sys.argv[1:]:
-        d = np.load(dname + "/custom_checkpoint_1.pkl", allow_pickle=True)
-        p = pickle.loads(d['custom_checkpoint_1/data.pkl'])
-        print(dname, p)
-
 
 def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
     log(f"Load model", accelerator=accelerator)
@@ -271,3 +265,10 @@ def env_stuff():
             f"ROCR_VISIBLE_DEVICES={os.environ.get('ROCR_VISIBLE_DEVICES')} "
             f"no cuda"
         )
+
+
+if __name__ == "__main__":
+    for dname in sys.argv[1:]:
+        d = np.load(dname + "/custom_checkpoint_1.pkl", allow_pickle=True)
+        p = pickle.loads(d['custom_checkpoint_1/data.pkl'])
+        print(dname, p)
