@@ -119,7 +119,6 @@ class LazyTokenizingIterDataset(TorchDataset):
         return self.data_len
 
     def __getitem__(self, idx):
-        start_time = datetime.now()
         if self._curr_idx > idx:
             log("Restarting iterator")
 
@@ -141,8 +140,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
         result = prep_tokenized_prompt_from_entry(item, self)
-        passed_time = datetime.now() - start_time
-        log(f"Tokenizing took {passed_time}")
+
         return result
 
 
