@@ -21,8 +21,6 @@ from transformers import (
     TrainerCallback
 )
 
-TESTING_LOCALLY = False
-
 MEM_CHECK_KAMIKAZE = False
 
 
@@ -202,7 +200,7 @@ def get_training_args(cmdline_args, acc):
         lr_scheduler_type = "polynomial",
         weight_decay = 0.1,
         # Optional but often helpful on LUMI/ROCm if you enable it in your args:
-        bf16=(not TESTING_LOCALLY),
+        bf16=True,
         ddp_find_unused_parameters=False,
         #dataloader_num_workers=1,
         #group_by_length=True,
@@ -227,7 +225,7 @@ def simple_train():
 
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
 
-    model = load_model(cmd_args.mdl_id, device, acc, attention=("eager" if TESTING_LOCALLY else "flash_attention_2"))
+    model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
@@ -249,7 +247,7 @@ def simple_train():
     log(f"Preparing to train", accelerator=acc)
 
     clbks = [StepTimerCallback] if acc.is_main_process else []
-    TrCl = Trainer #LoggingKillingTrainer if TESTING_LOCALLY else Trainer
+    TrCl = Trainer #LoggingKillingTrainer
 
     trainer = TrCl(
         model=model,
@@ -285,7 +283,5 @@ class LoggingKillingTrainer(Trainer):
         #return super().compute_loss(model, inputs, **kwargs)
 
 if __name__ == "__main__":
-    if not TESTING_LOCALLY:
-        env_stuff()
-
+    env_stuff()
     simple_train()
