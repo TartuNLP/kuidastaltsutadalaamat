@@ -6,9 +6,9 @@ import sys
 from random import choices, shuffle
 from collections import defaultdict
 
+import langdetect
 from accelerate import Accelerator
 
-from inference import filter_tr_pair
 from metrics import SMUGRI_RES
 from aux import log
 
@@ -229,3 +229,31 @@ if __name__ == "__main__":
     #do_something_else_without_global_ctx()
     #lets_do_some_filtering()
     #do_conversion()
+LANG_MAP = {"English": 'en', "Estonian": 'et', "Finnish": 'fi', "Hungarian": 'hu', "Latvian": 'lv',
+                       "Russian": 'ru', "Swedish": 'sv', "Norwegian": 'no', "German": 'de', "French": 'fr'}
+
+
+def filter_tr_pair(src, tgt, src_lang, tgt_lang):
+    in_l = float(len(src))
+    out_l = float(len(tgt))
+
+    r = in_l / out_l if in_l > out_l else out_l / in_l
+
+    if r > 3:
+        return 'ratio'
+
+    if src == tgt:
+        return 'eq'
+
+    if ('?' in src) != ('?' in tgt):
+        return 'ans'
+
+    try:
+        o_lang = langdetect.detect(tgt)
+    except langdetect.LangDetectException:
+        o_lang = 'none'
+
+    if o_lang != LANG_MAP[tgt_lang] and len(tgt) > 60:
+        return 'lid-tgt ' + o_lang
+
+    return 'ok'

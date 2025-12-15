@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import langdetect
 
 import promptops
 
@@ -14,6 +13,8 @@ import torch.distributed as dist
 from accelerate import Accelerator
 
 from datetime import datetime
+
+#from synthgen import filter_tr_pair
 
 """
 This currently assumes the batch size to be 1. With larger batches the padding tokens went
@@ -67,36 +68,6 @@ def llm_generate(model, tokenizer, tok_batch, debug=False, max_len=2000, do_prob
         return clean_outputs, meanlogprob
     else:
         return clean_outputs
-
-
-LANG_MAP = {"English": 'en', "Estonian": 'et', "Finnish": 'fi', "Hungarian": 'hu', "Latvian": 'lv',
-                       "Russian": 'ru', "Swedish": 'sv', "Norwegian": 'no', "German": 'de', "French": 'fr'}
-
-
-def filter_tr_pair(src, tgt, src_lang, tgt_lang):
-    in_l = float(len(src))
-    out_l = float(len(tgt))
-
-    r = in_l / out_l if in_l > out_l else out_l / in_l
-
-    if r > 3:
-        return 'ratio'
-
-    if src == tgt:
-        return 'eq'
-
-    if ('?' in src) != ('?' in tgt):
-        return 'ans'
-
-    try:
-        o_lang = langdetect.detect(tgt)
-    except langdetect.LangDetectException:
-        o_lang = 'none'
-
-    if o_lang != LANG_MAP[tgt_lang] and len(tgt) > 60:
-        return 'lid-tgt ' + o_lang
-
-    return 'ok'
 
 
 def reassemble_multi(list_of_lists):
@@ -164,6 +135,7 @@ def predict(model, tokenizer, data_loader, accel,
                 new_entry = { **json_input_entry, 'hyp-output': outputs[0], 'hyp-index': idx }
 
                 if filter_eurollm:
+                    from synthgen import filter_tr_pair
                     new_entry['flt'] = filter_tr_pair(new_entry['hi_segm'],
                                                       new_entry['hyp-output'],
                                                       new_entry['hi_lang'],
