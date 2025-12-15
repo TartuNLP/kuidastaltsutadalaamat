@@ -199,7 +199,7 @@ def save_all(outputs, args, acc):
             for line in outputs:
                 out_fh.write(str(line['hyp-output']) + "\n")
         else:
-            json.dump(outputs, out_fh, indent=2)
+            json.dump(outputs, out_fh, indent=2, ensure_ascii=False)
 
 
 def and_i_called_this_function_do_main_too():
