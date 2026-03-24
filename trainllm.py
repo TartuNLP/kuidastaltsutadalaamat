@@ -147,7 +147,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
 
 
 def _get_dec_layer_from_mdl(model_id):
-    if "Tower-Plus" in model_id:
+    if "Tower-Plus" in model_id or "towerplus" in model_id:
         return "Gemma2DecoderLayer"
     else:
         return "LlamaDecoderLayer"
@@ -191,7 +191,7 @@ def get_training_args(cmdline_args, acc):
         gradient_accumulation_steps=accum_steps,
         num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
-        save_total_limit=5,
+        save_total_limit=150,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
         save_strategy="steps",
