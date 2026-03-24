@@ -253,7 +253,7 @@ def simple_train():
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         data_collator=data_collator,
         callbacks=clbks,
     )
