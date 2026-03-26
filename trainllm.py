@@ -163,8 +163,8 @@ def get_fsdp_conf(cmdline_args):
                 "sync_module_states": True,
                 "forward_prefetch": True,
                 "limit_all_gathers": True,
-                "reshard_after_forward": True,
-                #"fsdp_min_num_params": 1e7,
+                # "reshard_after_forward": True,
+                # "fsdp_min_num_params": 1e7,
                 "transformer_layer_cls_to_wrap": [dec_layer_name],
                 # DO NOT enable cpu_offload on LUMI unless desperate
             }}
