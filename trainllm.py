@@ -149,6 +149,8 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
 def _get_dec_layer_from_mdl(model_id):
     if "Tower-Plus" in model_id or "towerplus" in model_id:
         return "Gemma2DecoderLayer"
+    elif "pertus" in model_id:
+        return "ApertusDecoderLayer"
     else:
         return "LlamaDecoderLayer"
 
