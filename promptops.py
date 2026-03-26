@@ -9,6 +9,7 @@ PF_ALPACA = "alpaca"
 PF_PIVOT = "eurollm_pivot"
 PF_TR_FLT = "eurollm_tr_flt"
 PF_TOWER = "tower"
+PF_APERTUS = "apertus"
 
 # now the prompt templates themselves, SMUGRI LID / MT template:
 
@@ -51,6 +52,11 @@ EUROLLM_TEMPLATE_BASE = """<|im_start|>system
 {user_instruction}<|im_end|>
 <|im_start|>assistant
 """
+
+APERTUS_TEMPLATE_BASE = ("<s><|system_start|>{system_instruction}<|system_end|>"
+                         "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
+                         "<|user_start|>{user_instruction}<|user_end|><|assistant_start|>")
+
 
 EUROLLM_TEMPLATE_FILTER = EUROLLM_TEMPLATE_BASE.format(
     system_instruction="You are a large language model, whose sole task is to respond to user queries. Think "
@@ -188,6 +194,9 @@ def prep_prompt(data, prompt_format, inference=False):
         # using Tower models
         return _prep_tower_entry(data, inference)
 
+    elif prompt_format == PF_APERTUS:
+        # using the SwissAI Apertus models
+        return _prep_apertus_entry(data, inference)
     else:
         raise NotImplementedError(f"Prompt format {prompt_format} is not implemented.")
 
@@ -240,6 +249,30 @@ def _prep_tower_entry(entry, inference=False):
         return tmpl.format(**{**entry, 'tgt_segm': ''}, custom_instruction=instr)
     else:
         return tmpl.format(**entry, custom_instruction=instr)
+
+
+def  _prep_apertus_entry(data, inference=False):
+    instr = "the following {src_lang} text to {tgt_lang}".format(**data)
+
+    if data['task'] == 'translate':
+        suf = "Translate "
+    elif data['task'] == 'approx-translate':
+        suf = "Approximately translate "
+    else:
+        raise NotImplementedError(f"Task {data['task']} is not supported.")
+
+    sys = ("You are SuurTõlk, the best Estonian-centric language model tailored for "
+           "a number of conditional text generation tasks.")
+
+    full_instr = suf + instr + ":\n{src_lang}: {src_segm}\n{tgt_lang}: "
+
+    result = APERTUS_TEMPLATE_BASE.format(system_instruction=sys, user_instruction=full_instr.format(**data))
+
+    if inference:
+        return result
+    else:
+        return result + data['tgt_segm']
+
 
 def _prep_ljmf_entry(entry, fmt, inference=False):
     if inference:

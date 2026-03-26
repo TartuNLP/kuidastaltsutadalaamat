@@ -133,6 +133,9 @@ class LazyTokenizingIterDataset(TorchDataset):
         item = None
 
         while self._curr_idx < idx:
+            # TODO maybe this is the place to check if we want to use or ignore an entry,
+            # and if it is a wrong instruction or too long or etc, we silently skip it
+            # and do not update the index
             self._curr_idx += 1
             item_rawstr = next(self.data_iter)
             item = json.loads(item_rawstr)
@@ -140,6 +143,8 @@ class LazyTokenizingIterDataset(TorchDataset):
         if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
         result = prep_tokenized_prompt_from_entry(item, self)
+
+        # TODO or here -- if it is too long, then we skip it
 
         return result
 
