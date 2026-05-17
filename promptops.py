@@ -6,10 +6,11 @@ PF_RAWLINES = "rawlines"
 PF_SMUGRI_MT = "smugri_mt"
 PF_SMUGRI_LID = "smugri_lid"
 PF_ALPACA = "alpaca"
-PF_PIVOT = "eurollm_pivot"
-PF_TR_FLT = "eurollm_tr_flt"
+#PF_PIVOT = "eurollm_pivot"
+#PF_TR_FLT = "eurollm_tr_flt"
 PF_TOWER = "tower"
-PF_APERTUS = "apertus"
+PF_APERTUS = "apertuss"
+PF_SUURTOLK = "suurt6lk"
 
 # now the prompt templates themselves, SMUGRI LID / MT template:
 
@@ -53,11 +54,149 @@ EUROLLM_TEMPLATE_BASE = """<|im_start|>system
 <|im_start|>assistant
 """
 
+EUROLLM_USER_MSG_TEMPLATE = """{text_is_in}: {hi_lang}.
+
+{hi_segm}
+
+{postinstruction}"""
+
 APERTUS_TEMPLATE_BASE = ("<s><|system_start|>{system_instruction}<|system_end|>"
                          "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
                          "<|user_start|>{user_instruction}<|user_end|><|assistant_start|>")
 
+SUURTOLK_TEMPLATE = ("<s><|system_start|>You are SuurTõlk, the best Estonian-centric language model "
+                     "tailored for conditional text generation tasks.<|system_end|>"
+                     "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
+                     "<|user_start|>{instruction}: {input}<|user_end|><|assistant_start|>")
 
+SUURTOLK_TEMPLATE_TRAIN = SUURTOLK_TEMPLATE + "{output}<|assistant_end|>"
+
+def prep_prompt(data, prompt_format, inference=False):
+    if prompt_format in {PF_RAW, PF_RAWLINES}:
+        # data is a string, return it
+        return data
+
+    elif prompt_format in {PF_SMUGRI_MT, PF_SMUGRI_LID}:
+        # data has src_segm, src_lang, tgt_lang, etc
+        return _prep_ljmf_entry(data, prompt_format, inference)
+
+    elif prompt_format == PF_ALPACA:
+        # data has instruction and input in it
+        return _prep_alpaca_entry(data, inference)
+
+    elif prompt_format == PF_TOWER:
+        # using Tower models
+        return _prep_tower_entry(data, inference)
+
+    elif prompt_format == PF_APERTUS:
+        # using the SwissAI Apertus models
+        return _prep_apertus_entry(data, inference)
+
+    elif prompt_format == PF_SUURTOLK:
+        return _prep_suurtolk_entry(data, inference)
+
+    else:
+        raise NotImplementedError(f"Prompt format {prompt_format} is not implemented.")
+
+
+"""def _prep_eurollm_entry(entry):
+    output_lang = entry['new_hi_res_lang']
+    user_msg = EUROLLM_USER_MSG_TEMPLATE.format(**entry, **MULTILING_MSG[output_lang])
+    result = EUROLLM_TEMPLATE_BASE.format(**MULTILING_MSG[output_lang], user_instruction=user_msg)
+    return result
+
+
+def _prep_eurollm_flt_entry(entry):
+    result = EUROLLM_TEMPLATE_FILTER.format(**entry)
+    return result
+"""
+
+
+def _prep_alpaca_entry(entry, inference=False):
+    fmt = ALPACA_PROMPT_INF if inference else ALPACA_PROMPT_TRAIN
+    prompt = fmt.format(**entry)
+    return prompt
+
+
+def _prep_tower_entry(entry, inference=False):
+    # data has task, src_lang, tgt_lang, src_segm and tgt_segm;
+    # need to make a custom_instruction field from the task field
+
+    # GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
+    # {custom_instruction}:
+    # {src_lang}: {src_segm}
+    # tgt_lang:<end_of_turn>
+    # <start_of_turn>model
+
+    instr_suf = "the following {src_lang} source text to {tgt_lang}".format(**entry)
+
+    if entry['task'] == 'translate':
+        instr = "Translate " + instr_suf
+        tmpl = GEMMA_PROMPT_TEMPLATE
+    elif entry['task'] == 'approx-translate':
+        instr = "Approximately translate " + instr_suf
+        tmpl = GEMMA_PROMPT_TEMPLATE
+    elif entry['task'] == 'generate':
+        if inference:
+            raise NotImplementedError("Inference not supported for unconditioned generation.")
+        instr = "Generate a sentence in {src_lang}".format(**entry)
+        tmpl = GEMMA_GENERATE
+    else:
+        raise NotImplementedError(f"Task {entry['task']} is not supported.")
+
+    if inference:
+        return tmpl.format(**{**entry, 'tgt_segm': ''}, custom_instruction=instr)
+    else:
+        return tmpl.format(**entry, custom_instruction=instr)
+
+
+def  _prep_suurtolk_entry(data, inference=False):
+    if inference:
+        return SUURTOLK_TEMPLATE.format(**data)
+    else:
+        return SUURTOLK_TEMPLATE_TRAIN.format(**data)
+
+def  _prep_apertus_entry(data, inference=False):
+    instr = "the following {src_lang} text to {tgt_lang}".format(**data)
+
+    if data['task'] == 'translate':
+        suf = "Translate "
+    elif data['task'] == 'approx-translate':
+        suf = "Approximately translate "
+    else:
+        raise NotImplementedError(f"Task {data['task']} is not supported.")
+
+    sys = ("You are SuurTõlk, the best Estonian-centric language model tailored for "
+           "a number of conditional text generation tasks.")
+
+    full_instr = suf + instr + ":\n{src_lang}: {src_segm}\n{tgt_lang}: "
+
+    result = APERTUS_TEMPLATE_BASE.format(system_instruction=sys, user_instruction=full_instr.format(**data))
+
+    if inference:
+        return result
+    else:
+        return result + data['tgt_segm']
+
+
+def _prep_ljmf_entry(entry, fmt, inference=False):
+    if inference:
+        if fmt == PF_SMUGRI_MT:
+            prompt = SMUGRI_INF_PROMPT_MT.format(**entry)
+        elif fmt == PF_SMUGRI_LID:
+            prompt = SMUGRI_INF_PROMPT_LID.format(**entry)
+        else:
+            raise NotImplementedError(f"Prompt format {fmt} is not implemented.")
+    else:
+        if entry['task'] in {'translate', 'approx-translate'} and entry['tgt_segm'] and entry['tgt_lang']:
+            prompt = SMUGRI_PROMPT_TRAIN_PARA.format(**entry)
+        else:
+            prompt = SMUGRI_PROMPT_TRAIN_MONO.format(**entry)
+
+    return prompt
+
+
+"""
 EUROLLM_TEMPLATE_FILTER = EUROLLM_TEMPLATE_BASE.format(
     system_instruction="You are a large language model, whose sole task is to respond to user queries. Think "
                        "carefully, and after careful deliberation respond to the user, following their instructions.",
@@ -161,131 +300,8 @@ MULTILING_MSG = {
                                      "oversettelsen."}
 }
 
-EUROLLM_USER_MSG_TEMPLATE = """{text_is_in}: {hi_lang}.
-
-{hi_segm}
-
-{postinstruction}"""
-
-#EUROLLM_USER_MSG_TEMPLATE = """{hi_segm}
-#{postinstruction}"""
-
-def prep_prompt(data, prompt_format, inference=False):
-    if prompt_format in {PF_RAW, PF_RAWLINES}:
-        # data is a string, return it
-        return data
-
-    elif prompt_format == PF_PIVOT:
-        assert inference, "Pivoting template with EuroLLM 9B is meant for inference only"
-        return _prep_eurollm_entry(data)
-
-    elif prompt_format == PF_TR_FLT:
-        return _prep_eurollm_flt_entry(data)
-
-    elif prompt_format in {PF_SMUGRI_MT, PF_SMUGRI_LID}:
-        # data has src_segm, src_lang, tgt_lang, etc
-        return _prep_ljmf_entry(data, prompt_format, inference)
-
-    elif prompt_format == PF_ALPACA:
-        # data has instruction and input in it
-        return _prep_alpaca_entry(data, inference)
-
-    elif prompt_format == PF_TOWER:
-        # using Tower models
-        return _prep_tower_entry(data, inference)
-
-    elif prompt_format == PF_APERTUS:
-        # using the SwissAI Apertus models
-        return _prep_apertus_entry(data, inference)
-    else:
-        raise NotImplementedError(f"Prompt format {prompt_format} is not implemented.")
 
 
-def _prep_eurollm_entry(entry):
-    output_lang = entry['new_hi_res_lang']
-    user_msg = EUROLLM_USER_MSG_TEMPLATE.format(**entry, **MULTILING_MSG[output_lang])
-    result = EUROLLM_TEMPLATE_BASE.format(**MULTILING_MSG[output_lang], user_instruction=user_msg)
-    return result
-
-
-def _prep_eurollm_flt_entry(entry):
-    result = EUROLLM_TEMPLATE_FILTER.format(**entry)
-    return result
-
-
-def _prep_alpaca_entry(entry, inference=False):
-    fmt = ALPACA_PROMPT_INF if inference else ALPACA_PROMPT_TRAIN
-    prompt = fmt.format(**entry)
-    return prompt
-
-
-def _prep_tower_entry(entry, inference=False):
-    # data has task, src_lang, tgt_lang, src_segm and tgt_segm;
-    # need to make a custom_instruction field from the task field
-
-    # GEMMA_PROMPT_TEMPLATE = """<start_of_turn>user
-    # {custom_instruction}:
-    # {src_lang}: {src_segm}
-    # tgt_lang:<end_of_turn>
-    # <start_of_turn>model
-
-    instr_suf = "the following {src_lang} source text to {tgt_lang}".format(**entry)
-
-    if entry['task'] == 'translate':
-        instr = "Translate " + instr_suf
-        tmpl = GEMMA_PROMPT_TEMPLATE
-    elif entry['task'] == 'approx-translate':
-        instr = "Approximately translate " + instr_suf
-        tmpl = GEMMA_PROMPT_TEMPLATE
-    elif entry['task'] == 'generate':
-        if inference:
-            raise NotImplementedError("Inference not supported for unconditioned generation.")
-        instr = "Generate a sentence in {src_lang}".format(**entry)
-        tmpl = GEMMA_GENERATE
-    else:
-        raise NotImplementedError(f"Task {entry['task']} is not supported.")
-
-    if inference:
-        return tmpl.format(**{**entry, 'tgt_segm': ''}, custom_instruction=instr)
-    else:
-        return tmpl.format(**entry, custom_instruction=instr)
-
-
-def  _prep_apertus_entry(data, inference=False):
-    instr = "the following {src_lang} text to {tgt_lang}".format(**data)
-
-    if data['task'] == 'translate':
-        suf = "Translate "
-    elif data['task'] == 'approx-translate':
-        suf = "Approximately translate "
-    else:
-        raise NotImplementedError(f"Task {data['task']} is not supported.")
-
-    sys = ("You are SuurTõlk, the best Estonian-centric language model tailored for "
-           "a number of conditional text generation tasks.")
-
-    full_instr = suf + instr + ":\n{src_lang}: {src_segm}\n{tgt_lang}: "
-
-    result = APERTUS_TEMPLATE_BASE.format(system_instruction=sys, user_instruction=full_instr.format(**data))
-
-    if inference:
-        return result
-    else:
-        return result + data['tgt_segm']
-
-
-def _prep_ljmf_entry(entry, fmt, inference=False):
-    if inference:
-        if fmt == PF_SMUGRI_MT:
-            prompt = SMUGRI_INF_PROMPT_MT.format(**entry)
-        elif fmt == PF_SMUGRI_LID:
-            prompt = SMUGRI_INF_PROMPT_LID.format(**entry)
-        else:
-            raise NotImplementedError(f"Prompt format {fmt} is not implemented.")
-    else:
-        if entry['task'] in {'translate', 'approx-translate'} and entry['tgt_segm'] and entry['tgt_lang']:
-            prompt = SMUGRI_PROMPT_TRAIN_PARA.format(**entry)
-        else:
-            prompt = SMUGRI_PROMPT_TRAIN_MONO.format(**entry)
-
-    return prompt
+#EUROLLM_USER_MSG_TEMPLATE = " ""{hi_segm}
+#{postinstruction}" ""
+"""
