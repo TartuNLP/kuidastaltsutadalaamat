@@ -37,7 +37,8 @@ def _cmdline_args():
                          pos_arg_types=[str, str, str],
                          kw_arg_dict={ "continue_training": False, "save_steps": 100, "lr": 1.5e-5,
                             "batch_size": 1024, "nr_sents_per_gpu": 4, "log_steps": 1, "epochs": 4,
-                            "max_length": 2000, "prompt_format": promptops.PF_SMUGRI_MT,
+                            "max_length": 4096,
+                            "prompt_format": promptops.PF_SUURTOLK,
                             "sharing": "none",
                             "gradckpt": False,
                             "memcheckkamikaze": False,
@@ -60,6 +61,12 @@ def _cmdline_args():
 
     if result.memcheckkamikaze:
         MEM_CHECK_KAMIKAZE = True
+
+    if result.prompt_format == promptops.PF_SUURTOLK:
+        result.sft_output_field = None
+        result.sft_delim = "<|assistant_start|>"
+        result.streamtrain = True
+        result.sharing = "fsdp"
 
     log(f"Launched as {result}")
 
