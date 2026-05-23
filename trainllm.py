@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+from datetime import datetime
+
+print(f"Just launched, at {datetime.now()}")
+
 from torch.utils.data import SequentialSampler
 
 import promptops
@@ -10,7 +14,6 @@ import subprocess
 import sys
 import os
 
-from datetime import datetime
 
 from accelerate import Accelerator
 from transformers import (
@@ -23,6 +26,7 @@ from transformers import (
 
 MEM_CHECK_KAMIKAZE = False
 
+print(f"Done launching, at {datetime.now()}")
 
 """
 1/3 This simply reads in command-line arguments 
