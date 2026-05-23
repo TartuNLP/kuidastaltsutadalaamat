@@ -67,7 +67,7 @@ APERTUS_TEMPLATE_BASE = ("<s><|system_start|>{system_instruction}<|system_end|>"
 SUURTOLK_TEMPLATE = ("<s><|system_start|>You are SuurTõlk, the best Estonian-centric language model "
                      "tailored for conditional text generation tasks.<|system_end|>"
                      "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
-                     "<|user_start|>{instruction}: {input}<|user_end|><|assistant_start|>")
+                     "<|user_start|>{instruct}: {input}<|user_end|><|assistant_start|>")
 
 SUURTOLK_TEMPLATE_TRAIN = SUURTOLK_TEMPLATE + "{output}<|assistant_end|>"
 
@@ -155,6 +155,7 @@ def  _prep_suurtolk_entry(data, inference=False):
         return SUURTOLK_TEMPLATE.format(**data)
     else:
         return SUURTOLK_TEMPLATE_TRAIN.format(**data)
+
 
 def  _prep_apertus_entry(data, inference=False):
     instr = "the following {src_lang} text to {tgt_lang}".format(**data)
