@@ -213,11 +213,14 @@ class CmdlineArgs:
 def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
     log(f"Load model", accelerator=accelerator)
 
-    #model = AutoModelForCausalLM.from_pretrained(mdl_id,
-    #                                             device_map=None,
-    #                                             low_cpu_mem_usage=False,
-    #                                             torch_dtype=torch.bfloat16,
-    #                                             attn_implementation=attention)
+
+    model = AutoModelForCausalLM.from_pretrained(mdl_id,
+                                                 device_map=None,
+                                                 low_cpu_mem_usage=False,
+                                                 torch_dtype=torch.bfloat16,
+                                                 attn_implementation=attention)
+
+    """
     qconf = QuantoConfig(weights="float8")
     model = AutoModelForCausalLM.from_pretrained(mdl_id,
                                                  device_map=None,
@@ -225,6 +228,7 @@ def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
                                                  torch_dtype=torch.bfloat16,
                                                  quantization_config=qconf,
                                                  attn_implementation=attention)
+                                                 """
 
 
     model.config.use_cache = False
