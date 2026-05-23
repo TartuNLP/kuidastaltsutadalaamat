@@ -9,7 +9,7 @@ import sys
 from datetime import datetime
 
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, QuantoConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 def log(msg, accelerator=None, all_threads=False):
@@ -214,20 +214,10 @@ def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
     log(f"Load model", accelerator=accelerator)
 
 
-    """
     model = AutoModelForCausalLM.from_pretrained(mdl_id,
                                                  device_map=None,
                                                  low_cpu_mem_usage=False,
                                                  torch_dtype=torch.bfloat16,
-                                                 attn_implementation=attention)
-    """
-
-    qconf = QuantoConfig(weights="float8")
-    model = AutoModelForCausalLM.from_pretrained(mdl_id,
-                                                 device_map=None,
-                                                 low_cpu_mem_usage=True,
-                                                 torch_dtype=torch.bfloat16,
-                                                 quantization_config=qconf,
                                                  attn_implementation=attention)
 
 
