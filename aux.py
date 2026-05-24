@@ -215,6 +215,7 @@ def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
 
 
     model = AutoModelForCausalLM.from_pretrained(mdl_id,
+                                                 local_files_only=True,
                                                  device_map=None,
                                                  low_cpu_mem_usage=False,
                                                  torch_dtype=torch.bfloat16,
