@@ -89,7 +89,7 @@ returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(TorchDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
-                 prompt_format="raw", sft_delim=None, sft_output_field=None):
+                 prompt_format="raw", sft_delim=None, sft_output_field=None, accel=None, debug_time=False):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -99,6 +99,8 @@ class LazyTokenizingIterDataset(TorchDataset):
         self.max_dist = max_dist
 
         self.data_iter = None
+        self.debug_time = debug_time
+        self.accel = accel
 
         self.data_len = self._get_data_len()
 
@@ -131,6 +133,9 @@ class LazyTokenizingIterDataset(TorchDataset):
             raise IndexError('Current index should not be that much behind the requested index')
 
         item = None
+
+        if self.debug_time:
+            log(f"Getting item {idx} (current index {self._curr_idx})", accelerator=self.accel)
 
         while self._curr_idx < idx:
             # TODO maybe this is the place to check if we want to use or ignore an entry,
@@ -209,14 +214,14 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 
 
-def load_training_data(path, tokenizer, cmd_args):
+def load_training_data(path, tokenizer, cmd_args, acc):
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
                                                cmd_args.batch_size+3,
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
-                                               cmd_args.sft_output_field)
+                                               cmd_args.sft_output_field, accel=acc, debug_time=True)
     else:
         with open(path, "r") as f:
             data = json.load(f)
