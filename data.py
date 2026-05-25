@@ -101,7 +101,7 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         self.d_iter = None
         self.accel = accel
-
+        log(f"CONT as {self.accel.process_index} of {self.accel.num_processes}")
         self.data_len = self._get_data_len()
 
         self._curr_idx = 1e400
