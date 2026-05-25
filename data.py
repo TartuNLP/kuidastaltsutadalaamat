@@ -90,7 +90,7 @@ returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(TorchDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
-                 prompt_format="raw", sft_delim=None, sft_output_field=None, accel=None):
+                 prompt_format="raw", sft_delim=None, sft_output_field=None, proc_idxs=None):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -100,34 +100,31 @@ class LazyTokenizingIterDataset(TorchDataset):
         self.max_dist = max_dist
 
         self.d_iter = None
-        self.accel = accel
-        log(f"CONT as {self.accel.process_index} of {self.accel.num_processes}")
+        self.proc_idxs = proc_idxs
+
         self.data_len = self._get_data_len()
 
         self._curr_idx = 1e400
 
     def _get_this_shard_name(self, shard_idx=None):
         if shard_idx is None:
-            shard_idx = self.accel.process_index
+            shard_idx = self.proc_idxs[0]
         return file_to_idx_name(self.path, shard_idx)
 
     def _get_data_len(self):
         result = 0
-        log("Computing length", accelerator=self.accel)
-
-        for i in range(self.accel.num_processes):
+        for i in range(self.proc_idxs[1]):
             with open(self._get_this_shard_name(shard_idx=i), "r") as fh0:
                 for _ in fh0:
                     result += 1
 
-        log(f"Length is {result}", accelerator=self.accel)
         return result
 
     def __len__(self):
         return self.data_len
 
     def _restart_iters(self):
-        log("Restarting iterator", accelerator=self.accel)
+        log("Restarting iterator")
 
         self.d_iter = open(self._get_this_shard_name(), "r")
 
@@ -137,9 +134,9 @@ class LazyTokenizingIterDataset(TorchDataset):
         if self._curr_idx > idx:
             self._restart_iters()
 
-        assert idx % self.accel.num_processes == self.accel.process_index, "MESS IN THREADS"
+        assert idx % self.proc_idxs[1] == self.proc_idxs[0], "MESS IN THREADS"
 
-        line_idx = idx // self.accel.num_processes
+        line_idx = idx // self.proc_idxs[1]
 
         assert self._curr_idx == line_idx - 1, "LINES SKIPPED"
 
@@ -150,7 +147,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         # !!! TODO_for_later: if it is too long or etc, then we skip it
 
         if item is None:
-            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.accel.process_index})")
+            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_idxs[0]})")
 
         result = prep_tokenized_prompt_from_entry(item, self)
 
@@ -217,7 +214,7 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 
 
-def load_training_data(path, tokenizer, cmd_args, acc):
+def load_training_data(path, tokenizer, cmd_args, proc_idxs):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
@@ -225,7 +222,7 @@ def load_training_data(path, tokenizer, cmd_args, acc):
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
-                                               cmd_args.sft_output_field, accel=acc)
+                                               cmd_args.sft_output_field, proc_idxs=proc_idxs)
     else:
         with open(path, "r") as f:
             data = json.load(f)

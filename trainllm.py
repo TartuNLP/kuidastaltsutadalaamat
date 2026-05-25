@@ -186,7 +186,6 @@ def get_fsdp_conf(cmdline_args):
 
 def get_training_args(cmdline_args, acc):
     #auto_find_batch_size
-    log(f"JUST 1, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     world_size = acc.num_processes
 
     assert cmdline_args.batch_size % (cmdline_args.nr_sents_per_gpu * world_size) == 0, \
@@ -195,11 +194,10 @@ def get_training_args(cmdline_args, acc):
     accum_steps = cmdline_args.batch_size // (cmdline_args.nr_sents_per_gpu * world_size)
 
     log(f"Nr of processes (GPUs): {world_size}, per-device batch: {cmdline_args.nr_sents_per_gpu}, accum. steps: {accum_steps}")
-    log(f"JUST 2, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+
     dpspd_conf = get_deepspeed_conf(cmdline_args, accum_steps)
-    log(f"JUST 3, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     fsdp_conf = get_fsdp_conf(cmdline_args)
-    log(f"JUST 4, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+
     tr_args = TrainingArguments(
         output_dir=cmdline_args.save_location,
         per_device_train_batch_size=cmdline_args.nr_sents_per_gpu,
@@ -227,19 +225,20 @@ def get_training_args(cmdline_args, acc):
         **dpspd_conf,
         **fsdp_conf,
     )
-    log(f"JUST 5, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+
     return tr_args
 
 
 def simple_train():
     cmd_args = _cmdline_args()
     acc = Accelerator()
-    log(f"JUST CHECKING 0, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+    proc_idx = acc.process_index
+    num_proc = acc.num_processes
 
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
     training_args = get_training_args(cmd_args, acc)
-    log(f"JUST CHECKING 1, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
 
     model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
@@ -251,7 +250,7 @@ def simple_train():
 
     log(f"Load data", accelerator=acc)
 
-    tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, acc)
+    tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, (proc_idx, num_proc))
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
