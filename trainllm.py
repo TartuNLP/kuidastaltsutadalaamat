@@ -237,18 +237,18 @@ def simple_train():
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
     training_args = get_training_args(cmd_args, acc)
-
+    log(f"JUST CHECKING 1, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
-
+    log(f"JUST CHECKING 2, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
-
+    log(f"JUST CHECKING 3, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     if getattr(model.config, "pad_token_id", None) is None:
         model.config.pad_token_id = tokenizer.pad_token_id
-
+    log(f"JUST CHECKING 4, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     log(f"Load data", accelerator=acc)
-    log(f"JUST CHECKING 1, {acc.process_index} of {acc.num_processes}", accelerator=acc)
+    log(f"JUST CHECKING 5, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, acc)
 
     data_collator = DataCollatorForLanguageModeling(
