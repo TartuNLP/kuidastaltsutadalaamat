@@ -247,6 +247,7 @@ def simple_train():
         model.config.pad_token_id = tokenizer.pad_token_id
 
     log(f"Load data", accelerator=acc)
+    log(f"JUST CHECKING 1, {acc.process_index} of {acc.num_processes}", accelerator=acc)
     tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, acc)
 
     data_collator = DataCollatorForLanguageModeling(
