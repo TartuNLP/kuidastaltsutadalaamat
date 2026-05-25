@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import json
 import sys
 
@@ -100,7 +101,32 @@ def iter_stdin_json_items(fh):
             yield entr
 
 
+def prep_out_folder(filename):
+    folder_name = '.'.join(filename.split('.')[:-1])
+
+    if os.path.exists(folder_name):
+        raise Exception(f"Output folder '{folder_name}' already exists, don't want to overwrite.")
+    else:
+        os.makedirs(folder_name)
+
+    return folder_name
+
+
+
 if __name__ == '__main__':
+    num_threads = int(sys.argv[1])
+    in_filename = sys.argv[2]
+    out_folder = prep_out_folder(in_filename)
+
+    out_fhs = [open(f"{out_folder}/{i}.jsonl", 'w')
+               for i in range(num_threads)]
+
+    with open(in_filename, 'r') as fh_in:
+        for ii, line in enumerate(fh_in):
+            out_fhs[ii % num_threads].write(line)
+
+
+    """
     if len(sys.argv) > 1:
         # convert Neurotolge json files to jsonl for training
         all_data = []
@@ -121,4 +147,4 @@ if __name__ == '__main__':
                              entryy['tgt_lang'],
                              entryy['task'],
                              comet_sc=None)
-
+    """
