@@ -232,6 +232,7 @@ def get_training_args(cmdline_args, acc):
 def simple_train():
     cmd_args = _cmdline_args()
     acc = Accelerator()
+    log(f"JUST CHECKING 0, {acc.process_index} of {acc.num_processes}", accelerator=acc)
 
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
