@@ -7,7 +7,8 @@ import sys
 from torch.utils.data import Dataset as TorchDataset
 
 from aux import log
-from datetime import datetime
+from convdata import file_to_idx_name
+
 
 def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
     if for_inf:
@@ -89,7 +90,7 @@ returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(TorchDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
-                 prompt_format="raw", sft_delim=None, sft_output_field=None, accel=None, debug_time=False):
+                 prompt_format="raw", sft_delim=None, sft_output_field=None, accel=None):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -98,21 +99,26 @@ class LazyTokenizingIterDataset(TorchDataset):
         self.sft_output_field = sft_output_field
         self.max_dist = max_dist
 
-        self.data_iter = None
-        self.debug_time = debug_time
+        self.d_iter = None
         self.accel = accel
 
         self.data_len = self._get_data_len()
 
         self._curr_idx = 1e400
 
+    def _get_this_shard_name(self, shard_idx=None):
+        if shard_idx is None:
+            shard_idx = self.accel.process_index
+        return file_to_idx_name(self.path, shard_idx)
+
     def _get_data_len(self):
         result = 0
         log("Computing length")
 
-        with open(self.path, "r") as fh0:
-            for _ in fh0:
-                result += 1
+        for i in range(self.accel.num_processes):
+            with open(self._get_this_shard_name(shard_idx=i), "r") as fh0:
+                for _ in fh0:
+                    result += 1
 
         log(f"Length is {result}")
         return result
@@ -120,36 +126,33 @@ class LazyTokenizingIterDataset(TorchDataset):
     def __len__(self):
         return self.data_len
 
+    def _restart_iters(self):
+        log("Restarting iterator")
+
+        self.d_iter = open(self._get_this_shard_name(), "r")
+
+        self._curr_idx = -1
+
     def __getitem__(self, idx):
         if self._curr_idx > idx:
-            log("Restarting iterator")
+            self._restart_iters()
 
-            fh = open(self.path, "r")
-            self.data_iter = fh
+        assert idx % self.accel.num_processes == self.accel.process_index, "MESS IN THREADS"
 
-            self._curr_idx = -1
+        line_idx = idx // self.accel.num_processes
 
-        elif idx - self._curr_idx > self.max_dist:
-            raise IndexError('Current index should not be that much behind the requested index')
+        assert self._curr_idx == line_idx - 1, "LINES SKIPPED"
 
-        item = None
+        self._curr_idx += 1
+        item_rawstr = next(self.d_iter)
+        item = json.loads(item_rawstr)
 
-        if self.debug_time:
-            log(f"Getting item {idx} (current index {self._curr_idx})", accelerator=self.accel)
-
-        while self._curr_idx < idx:
-            # TODO maybe this is the place to check if we want to use or ignore an entry,
-            # and if it is a wrong instruction or too long or etc, we silently skip it
-            # and do not update the index
-            self._curr_idx += 1
-            item_rawstr = next(self.data_iter)
-            item = json.loads(item_rawstr)
+        # !!! TODO_for_later: if it is too long or etc, then we skip it
 
         if item is None:
-            raise Exception(f"This should not have happened: {self._curr_idx}, {idx}")
-        result = prep_tokenized_prompt_from_entry(item, self)
+            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.accel.process_index})")
 
-        # TODO or here -- if it is too long, then we skip it
+        result = prep_tokenized_prompt_from_entry(item, self)
 
         return result
 
@@ -221,7 +224,7 @@ def load_training_data(path, tokenizer, cmd_args, acc):
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
-                                               cmd_args.sft_output_field, accel=acc, debug_time=True)
+                                               cmd_args.sft_output_field, accel=acc)
     else:
         with open(path, "r") as f:
             data = json.load(f)

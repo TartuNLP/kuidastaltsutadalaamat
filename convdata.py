@@ -101,8 +101,12 @@ def iter_stdin_json_items(fh):
             yield entr
 
 
+def file_to_base_folder(filename):
+    return '.'.join(filename.split('.')[:-1])
+
+
 def prep_out_folder(filename):
-    folder_name = '.'.join(filename.split('.')[:-1])
+    folder_name = file_to_base_folder(filename)
 
     if os.path.exists(folder_name):
         raise Exception(f"Output folder '{folder_name}' already exists, don't want to overwrite.")
@@ -112,18 +116,25 @@ def prep_out_folder(filename):
     return folder_name
 
 
+def file_to_idx_name(folder, idx):
+    return f"{folder}/{idx}.jsonl"
 
-if __name__ == '__main__':
+
+def say_no_to_global_variables():
     num_threads = int(sys.argv[1])
     in_filename = sys.argv[2]
     out_folder = prep_out_folder(in_filename)
 
-    out_fhs = [open(f"{out_folder}/{i}.jsonl", 'w')
+    out_fhs = [open(file_to_idx_name(out_folder, i), 'w')
                for i in range(num_threads)]
 
     with open(in_filename, 'r') as fh_in:
         for ii, line in enumerate(fh_in):
             out_fhs[ii % num_threads].write(line)
+
+if __name__ == '__main__':
+    say_no_to_global_variables()
+
 
 
     """
