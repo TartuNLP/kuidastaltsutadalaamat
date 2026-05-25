@@ -218,6 +218,7 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 
 def load_training_data(path, tokenizer, cmd_args, acc):
+    log(f"JUST CHECKING 2, {acc.num_processes}", accelerator=acc)
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
                                                cmd_args.batch_size+3,
