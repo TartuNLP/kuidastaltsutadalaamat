@@ -14,7 +14,6 @@ import subprocess
 import sys
 import os
 
-
 from accelerate import Accelerator
 from transformers import (
     TrainingArguments,
@@ -23,6 +22,7 @@ from transformers import (
     logging,
     TrainerCallback
 )
+from collections import namedtuple
 
 MEM_CHECK_KAMIKAZE = False
 
@@ -232,8 +232,8 @@ def get_training_args(cmdline_args, acc):
 def simple_train():
     cmd_args = _cmdline_args()
     acc = Accelerator()
-    proc_idx = acc.process_index
-    num_proc = acc.num_processes
+    proc_nums = namedtuple("ProcNums",
+                           ["proc_idx", "num_proc"])(acc.process_index, acc.num_processes)
 
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
@@ -250,7 +250,7 @@ def simple_train():
 
     log(f"Load data", accelerator=acc)
 
-    tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, (proc_idx, num_proc))
+    tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,

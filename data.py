@@ -90,7 +90,7 @@ returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(TorchDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
-                 prompt_format="raw", sft_delim=None, sft_output_field=None, proc_idxs=None):
+                 prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -100,7 +100,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         self.max_dist = max_dist
 
         self.d_iter = None
-        self.proc_idxs = proc_idxs
+        self.proc_nums = proc_nums
 
         self.data_len = self._get_data_len()
 
@@ -108,12 +108,12 @@ class LazyTokenizingIterDataset(TorchDataset):
 
     def _get_this_shard_name(self, shard_idx=None):
         if shard_idx is None:
-            shard_idx = self.proc_idxs[0]
+            shard_idx = self.proc_nums.proc_idx
         return file_to_idx_name(self.path, shard_idx)
 
     def _get_data_len(self):
         result = 0
-        for i in range(self.proc_idxs[1]):
+        for i in range(self.proc_nums.num_proc):
             with open(self._get_this_shard_name(shard_idx=i), "r") as fh0:
                 for _ in fh0:
                     result += 1
@@ -134,9 +134,9 @@ class LazyTokenizingIterDataset(TorchDataset):
         if self._curr_idx > idx:
             self._restart_iters()
 
-        assert idx % self.proc_idxs[1] == self.proc_idxs[0], "MESS IN THREADS"
+        assert idx % self.proc_nums.num_proc == self.proc_nums.proc_idx, "MESS IN THREADS"
 
-        line_idx = idx // self.proc_idxs[1]
+        line_idx = idx // self.proc_nums.num_proc[1]
 
         assert self._curr_idx == line_idx - 1, "LINES SKIPPED"
 
@@ -147,7 +147,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         # !!! TODO_for_later: if it is too long or etc, then we skip it
 
         if item is None:
-            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_idxs[0]})")
+            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
 
         result = prep_tokenized_prompt_from_entry(item, self)
 
@@ -214,7 +214,7 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 
 
-def load_training_data(path, tokenizer, cmd_args, proc_idxs):
+def load_training_data(path, tokenizer, cmd_args, proc_nums):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
@@ -222,7 +222,7 @@ def load_training_data(path, tokenizer, cmd_args, proc_idxs):
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
-                                               cmd_args.sft_output_field, proc_idxs=proc_idxs)
+                                               cmd_args.sft_output_field, proc_nums=proc_nums)
     else:
         with open(path, "r") as f:
             data = json.load(f)
