@@ -136,7 +136,7 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         assert idx % self.proc_nums.num_proc == self.proc_nums.proc_idx, "MESS IN THREADS"
 
-        line_idx = idx // self.proc_nums.num_proc[1]
+        line_idx = idx // self.proc_nums.num_proc
 
         assert self._curr_idx == line_idx - 1, "LINES SKIPPED"
 
