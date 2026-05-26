@@ -263,8 +263,6 @@ def env_stuff():
             f"cuda_count={torch.cuda.device_count()} curr_dev={torch.cuda.current_device()}"
         )
 
-        local_rank = int(os.environ.get("LOCAL_RANK", 0))
-        time.sleep(local_rank * 0.5)  # Staggers ranks by 500ms increments
     except AssertionError:
         log(
             f"host={socket.gethostname()} "
