@@ -32,7 +32,7 @@ print(f"Done launching, at {datetime.now()}")
 1/3 This simply reads in command-line arguments 
 """
 
-def _cmdline_args():
+def _cmdline_args(acc):
     global MEM_CHECK_KAMIKAZE
     description = """Train or tune decoder models"""
 
@@ -72,7 +72,7 @@ def _cmdline_args():
         result.streamtrain = True
         result.sharing = "fsdp"
 
-    log(f"Launched as {result}")
+    log(f"Launched as {result}", accelerator=acc)
 
     return result
 
@@ -229,9 +229,8 @@ def get_training_args(cmdline_args, acc):
     return tr_args
 
 
-def simple_train():
-    cmd_args = _cmdline_args()
-    acc = Accelerator()
+def simple_train(acc):
+    cmd_args = _cmdline_args(acc)
     proc_nums = namedtuple("ProcNums",
                            ["proc_idx", "num_proc"])(acc.process_index, acc.num_processes)
 
@@ -301,4 +300,14 @@ class LoggingKillingTrainer(Trainer):
 
 if __name__ == "__main__":
     env_stuff()
-    simple_train()
+
+    accelerator = Accelerator()
+    we_are_main = accelerator.is_main_process
+
+    try:
+        simple_train(accelerator)
+    except Exception as e:
+        if we_are_main:
+            raise e
+        else:
+            log(f"Skipped the long exception: {e}")
