@@ -302,6 +302,9 @@ if __name__ == "__main__":
 
     log("Let's goooo", accelerator=accelerator)
 
+    simple_train(accelerator)
+
+    """
     try:
         simple_train(accelerator)
     except Exception as e:
@@ -309,3 +312,4 @@ if __name__ == "__main__":
             raise e
         else:
             log(f"Skipped the long exception: {e}")
+    """
