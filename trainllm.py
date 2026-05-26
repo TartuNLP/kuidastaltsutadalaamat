@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 from datetime import datetime
 
-print(f"Just launched, at {datetime.now()}")
-
 from torch.utils.data import SequentialSampler
 
 import promptops
@@ -25,8 +23,6 @@ from transformers import (
 from collections import namedtuple
 
 MEM_CHECK_KAMIKAZE = False
-
-print(f"Done launching, at {datetime.now()}")
 
 """
 1/3 This simply reads in command-line arguments 
@@ -303,6 +299,8 @@ if __name__ == "__main__":
 
     accelerator = Accelerator()
     we_are_main = accelerator.is_main_process
+
+    log("Let's goooo", accelerator=accelerator)
 
     try:
         simple_train(accelerator)
