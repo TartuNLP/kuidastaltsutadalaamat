@@ -254,13 +254,13 @@ def env_stuff():
 
     try:
         log(
-            f"host={socket.gethostname()}\n"
-            f"RANK={os.environ['RANK']}\n"
-            f"WORLD_SIZE={os.environ['WORLD_SIZE']}\n"
-            f"LOCAL_RANK={os.environ['LOCAL_RANK']}\n"
-            f"ROCR_VISIBLE_DEVICES={os.environ.get('ROCR_VISIBLE_DEVICES')}\n"
-            f"MASTER_ADDR={os.environ.get('MASTER_ADDR')}\n"
-            f"MASTER_PORT={os.environ.get('MASTER_PORT')}\n"
+            f"host={socket.gethostname()} "
+            f"RANK={os.environ['RANK']} "
+            f"WORLD_SIZE={os.environ['WORLD_SIZE']} "
+            f"LOCAL_RANK={os.environ['LOCAL_RANK']} "
+            f"ROCR_VISIBLE_DEVICES={os.environ.get('ROCR_VISIBLE_DEVICES')} "
+            f"MASTER_ADDR={os.environ.get('MASTER_ADDR')} "
+            f"MASTER_PORT={os.environ.get('MASTER_PORT')} "
             f"cuda_count={torch.cuda.device_count()} curr_dev={torch.cuda.current_device()}"
         )
 
