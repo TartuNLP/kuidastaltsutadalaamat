@@ -115,10 +115,16 @@ class LazyTokenizingIterDataset(TorchDataset):
 
     def _get_data_len(self):
         result = 0
+        if self.proc_nums.proc_idx == 0:
+            log("Computing length")
+
         for i in range(self.proc_nums.num_proc):
             with open(self._get_this_shard_name(shard_idx=i), "r") as fh0:
                 for _ in fh0:
                     result += 1
+
+        if self.proc_nums.proc_idx == 0:
+            log(f"Length computed: {result}")
 
         return result
 
@@ -126,7 +132,8 @@ class LazyTokenizingIterDataset(TorchDataset):
         return self.data_len
 
     def _restart_iters(self):
-        log("Restarting iterator")
+        if self.proc_nums.proc_idx == 0:
+            log("Restarting iterator")
 
         self.d_iter = open(self._get_this_shard_name(), "r")
 
