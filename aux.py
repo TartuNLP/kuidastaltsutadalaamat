@@ -9,6 +9,7 @@ import sys
 from datetime import datetime
 
 import torch
+import time
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
@@ -258,9 +259,12 @@ def env_stuff():
             f"LOCAL_RANK={os.environ['LOCAL_RANK']} "
             f"HIP_VISIBLE_DEVICES={os.environ.get('HIP_VISIBLE_DEVICES')} "
             f"ROCR_VISIBLE_DEVICES={os.environ.get('ROCR_VISIBLE_DEVICES')} "
-            f"master address:port={os.environ.get('MASTER_ADDR')} : {os.environ.get('MASTER_PORT')}"
+            f"master address:port={os.environ.get('MASTER_ADDR')} : {os.environ.get('MASTER_PORT')} "
             f"cuda_count={torch.cuda.device_count()} curr_dev={torch.cuda.current_device()}"
         )
+
+        local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        time.sleep(local_rank * 0.5)  # Staggers ranks by 500ms increments
     except AssertionError:
         log(
             f"host={socket.gethostname()} "
