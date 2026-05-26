@@ -245,8 +245,8 @@ def env_stuff():
     os.environ.setdefault("LOCAL_RANK", os.environ.get("SLURM_LOCALID", "---"))
     os.environ.setdefault("RANK", os.environ.get("SLURM_PROCID", "0"))
     os.environ.setdefault("WORLD_SIZE", os.environ.get("SLURM_NTASKS", "1"))
-    os.environ.setdefault("MASTER_ADDR", os.environ.get("SLURM_LAUNCH_NODE_IPADDR", "127.0.0.1"))
-    os.environ.setdefault("MASTER_PORT", "29500")  # pick an open port
+    os.environ.setdefault("MASTER_ADDR", os.environ.get("MASTER_ADDR", "127.0.0.1"))
+    os.environ.setdefault("MASTER_PORT", os.environ.get("MASTER_PORT", "29500"))  # pick an open port
 
     # Optional: make sure each process selects its own GPU
     torch.cuda.set_device(int(os.environ["LOCAL_RANK"]))
