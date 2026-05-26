@@ -106,6 +106,8 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         self._curr_idx = 1e400
 
+        self._restart_iters()
+
     def _get_this_shard_name(self, shard_idx=None):
         if shard_idx is None:
             shard_idx = self.proc_nums.proc_idx
