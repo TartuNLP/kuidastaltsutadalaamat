@@ -113,7 +113,12 @@ class StepTimerCallback(TrainerCallback):
         # you can use logging.get_logger(...) instead of print
         print(f"[step {state.global_step}/{state.max_steps}] took {elapsed}, avg {avg}; approx {prediction} remaining")
 
-        if MEM_CHECK_KAMIKAZE and state.global_step >= 13:
+        if MEM_CHECK_KAMIKAZE and state.global_step == 13:
+            rocm_output = subprocess.check_output(['rocm-smi'])
+
+            print(rocm_output.decode('utf8'))
+
+        if MEM_CHECK_KAMIKAZE and state.global_step >= 25:
             rocm_output = subprocess.check_output(['rocm-smi'])
 
             print(rocm_output.decode('utf8'))
