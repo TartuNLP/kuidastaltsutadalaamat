@@ -258,6 +258,7 @@ def env_stuff():
             f"LOCAL_RANK={os.environ['LOCAL_RANK']} "
             f"HIP_VISIBLE_DEVICES={os.environ.get('HIP_VISIBLE_DEVICES')} "
             f"ROCR_VISIBLE_DEVICES={os.environ.get('ROCR_VISIBLE_DEVICES')} "
+            f"master address:port={os.environ.get('MASTER_ADDR')} : {os.environ.get('MASTER_PORT')}"
             f"cuda_count={torch.cuda.device_count()} curr_dev={torch.cuda.current_device()}"
         )
     except AssertionError:
