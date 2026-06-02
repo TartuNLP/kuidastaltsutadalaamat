@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from torch.utils.data import SequentialSampler
 
@@ -12,7 +12,7 @@ import subprocess
 import sys
 import os
 
-from accelerate import Accelerator
+from accelerate import Accelerator, InitProcessGroupKwargs
 from transformers import (
     TrainingArguments,
     Trainer,
@@ -66,7 +66,7 @@ def _cmdline_args(acc):
         result.sft_output_field = None
         result.sft_delim = "<|assistant_start|>"
         result.streamtrain = True
-        result.sharing = "fsdp"
+        result.sharing = "none"
 
     log(f"Launched as {result}", accelerator=acc)
 
@@ -99,7 +99,6 @@ class StepTimerCallback(TrainerCallback):
         now = datetime.now()
 
         if self.actual_first_step is None:
-            log(f"It took {now - self.abs_start} to start training")
             self.actual_first_step = state.global_step - 1
 
         elapsed = now - self._step_start
@@ -110,7 +109,6 @@ class StepTimerCallback(TrainerCallback):
 
         prediction = avg * (state.max_steps - state.global_step)
 
-        # you can use logging.get_logger(...) instead of print
         print(f"[step {state.global_step}/{state.max_steps}] took {elapsed}, avg {avg}; approx {prediction} remaining")
 
         if MEM_CHECK_KAMIKAZE and state.global_step == 13:
@@ -124,6 +122,7 @@ class StepTimerCallback(TrainerCallback):
             print(rocm_output.decode('utf8'))
 
             log(f"memory measurement done!")
+
             raise KamikazeException
 
 
@@ -302,7 +301,9 @@ class LoggingKillingTrainer(Trainer):
 if __name__ == "__main__":
     env_stuff()
 
-    accelerator = Accelerator()
+    timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=7200))
+    accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])
+
     we_are_main = accelerator.is_main_process
 
     log("Let's goooo", accelerator=accelerator)
