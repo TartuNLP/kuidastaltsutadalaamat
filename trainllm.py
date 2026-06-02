@@ -66,7 +66,6 @@ def _cmdline_args(acc):
         result.sft_output_field = None
         result.sft_delim = "<|assistant_start|>"
         result.streamtrain = True
-        result.sharing = "none"
 
     log(f"Launched as {result}", accelerator=acc)
 
