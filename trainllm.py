@@ -91,6 +91,7 @@ class StepTimerCallback(TrainerCallback):
 
     # called right before each training step
     def on_step_begin(self, args, state, control, **kwargs):
+        log(f"starting step {state.global_step}/{state.max_steps}")
         self._step_start = datetime.now()
 
     # called right after each training step
@@ -109,7 +110,7 @@ class StepTimerCallback(TrainerCallback):
 
         prediction = avg * (state.max_steps - state.global_step)
 
-        print(f"[step {state.global_step}/{state.max_steps}] took {elapsed}, avg {avg}; approx {prediction} remaining")
+        log(f"step {state.global_step}/{state.max_steps} took {elapsed}, avg {avg}; approx {prediction} remaining")
 
         if MEM_CHECK_KAMIKAZE and state.global_step == 13:
             rocm_output = subprocess.check_output(['rocm-smi'])
