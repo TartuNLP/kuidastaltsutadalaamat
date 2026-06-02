@@ -302,7 +302,7 @@ class LoggingKillingTrainer(Trainer):
 if __name__ == "__main__":
     env_stuff()
 
-    timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=7200))
+    timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=1200))
     accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])
 
     we_are_main = accelerator.is_main_process
