@@ -16,6 +16,13 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
+import accelerate
+
+accelerate.optimizer.AcceleratedOptimizer.defaults = property(
+    lambda self: self.optimizer.defaults if hasattr(self.optimizer,
+                                                    "defaults") else self.optimizer.optimizer.defaults
+)
+
 from accelerate import Accelerator, InitProcessGroupKwargs
 from transformers import (
     TrainingArguments,
