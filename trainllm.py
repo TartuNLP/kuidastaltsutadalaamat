@@ -197,7 +197,9 @@ def get_training_args(cmdline_args, acc):
 
     accum_steps = cmdline_args.batch_size // (cmdline_args.nr_sents_per_gpu * world_size)
 
-    log(f"Nr of processes (GPUs): {world_size}, per-device batch: {cmdline_args.nr_sents_per_gpu}, accum. steps: {accum_steps}")
+    log(f"Nr of processes (GPUs): {world_size}, "
+        f"per-device batch: {cmdline_args.nr_sents_per_gpu}, "
+        f"accum. steps: {accum_steps}", accelerator=acc)
 
     dpspd_conf = get_deepspeed_conf(cmdline_args, accum_steps)
     fsdp_conf = get_fsdp_conf(cmdline_args)
