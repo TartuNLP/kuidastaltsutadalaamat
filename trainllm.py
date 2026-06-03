@@ -12,6 +12,10 @@ import subprocess
 import sys
 import os
 
+import torch
+if not hasattr(torch, "float8_e8m0fnu"):
+    setattr(torch, "float8_e8m0fnu", torch.float32)
+
 from accelerate import Accelerator, InitProcessGroupKwargs
 from transformers import (
     TrainingArguments,
