@@ -299,7 +299,7 @@ class LoggingKillingTrainer(Trainer):
         #return super().compute_loss(model, inputs, **kwargs)
 
 if __name__ == "__main__":
-    env_stuff()
+    #env_stuff()
 
     timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=1200))
     accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])

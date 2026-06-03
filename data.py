@@ -140,9 +140,6 @@ class LazyTokenizingIterDataset(TorchDataset):
         self._curr_idx = -1
 
     def __getitem__(self, idx):
-        if self.proc_nums.proc_idx == 0:
-            log(f"start get item {idx}")
-
         if self._curr_idx > idx:
             self._restart_iters()
 
@@ -162,9 +159,6 @@ class LazyTokenizingIterDataset(TorchDataset):
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
 
         result = prep_tokenized_prompt_from_entry(item, self)
-
-        if self.proc_nums.proc_idx == 0:
-            log(f"end get item {idx}")
 
         return result
 
