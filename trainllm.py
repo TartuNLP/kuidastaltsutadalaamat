@@ -101,7 +101,6 @@ class StepTimerCallback(TrainerCallback):
 
     # called right before each training step
     def on_step_begin(self, args, state, control, **kwargs):
-        log(f"starting step {state.global_step+1}/{state.max_steps}")
         self._step_start = datetime.now()
 
     # called right after each training step
