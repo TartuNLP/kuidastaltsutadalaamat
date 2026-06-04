@@ -230,7 +230,7 @@ def data_sanity_check_and_len(path, cmd_args, proc_nums):
     files = glob.glob(path)
     lens = [pq.read_metadata(f).num_rows for f in files]
 
-    assert all(e == e[0] for e in lens), "Not all training data files have the same number of rows"
+    assert all(e == lens[0] for e in lens), "Not all training data files have the same number of rows"
 
     assert len(files) % proc_nums.num_proc == 0, "Number of files is not divisible by number of processes"
 
