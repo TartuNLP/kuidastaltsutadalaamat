@@ -242,7 +242,7 @@ def data_sanity_check_and_len(path, cmd_args, proc_nums):
 
     return nr_batches * cmd_args.epochs
 
-def load_training_data(path, tokenizer, cmd_args, proc_nums):
+def load_training_data(path, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_proc
 
@@ -264,7 +264,8 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
         dataset = dataset.repeat(cmd_args.epochs)
 
     def process_and_tokenize(entry):
-        return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
+        #return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
+        return promptops.prep_prompt(entry, cmd_args.prompt_format)
 
     return dataset.map(process_and_tokenize), nr_batches
 

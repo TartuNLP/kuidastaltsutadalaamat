@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 
-from torch.utils.data import SequentialSampler
-
 import promptops
 from aux import log, CmdlineArgs, load_model, load_tokenizer, env_stuff
 from data import load_training_data
-import types
 
 import subprocess
 import sys
@@ -32,6 +29,7 @@ from transformers import (
     TrainerCallback
 )
 from collections import namedtuple
+from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
 
 MEM_CHECK_KAMIKAZE = False
 
@@ -210,7 +208,8 @@ def get_training_args(cmdline_args, acc, total_batches):
     dpspd_conf = get_deepspeed_conf(cmdline_args, accum_steps)
     fsdp_conf = get_fsdp_conf(cmdline_args)
 
-    tr_args = TrainingArguments(
+    #tr_args = TrainingArguments(
+    tr_args = SFTConfig(
         output_dir=cmdline_args.save_location,
         per_device_train_batch_size=cmdline_args.nr_sents_per_gpu,
         gradient_accumulation_steps=accum_steps,
@@ -259,17 +258,18 @@ def simple_train(acc):
         model.config.pad_token_id = tokenizer.pad_token_id
 
     log(f"Load data", accelerator=acc)
+    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, cmd_args, proc_nums)
 
-    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
+    #data_collator = DataCollatorForLanguageModeling(
+    #    tokenizer=tokenizer,
+    #    mlm=True,
+    #    mlm_probability=1,
+    #    random_replace_prob=0,
+    #    mask_replace_prob=0,
+    #    pad_to_multiple_of=8,
+    #)
 
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=True,
-        mlm_probability=1,
-        random_replace_prob=0,
-        mask_replace_prob=0,
-        pad_to_multiple_of=8,
-    )
+    data_collator = DataCollatorForCompletionOnlyLM(cmd_args.sft_delim, tokenizer=tokenizer)
 
     log(f"Preparing to train", accelerator=acc)
 
@@ -314,10 +314,6 @@ if __name__ == "__main__":
 
     timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=1200))
     accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])
-
-    we_are_main = accelerator.is_main_process
-
-    log("Let's goooo", accelerator=accelerator)
 
     simple_train(accelerator)
 
