@@ -217,6 +217,7 @@ def get_training_args(cmdline_args, acc):
         num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
         save_total_limit=150,
+        max_steps=100,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
         save_strategy="steps",
