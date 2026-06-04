@@ -64,12 +64,12 @@ APERTUS_TEMPLATE_BASE = ("<s><|system_start|>{system_instruction}<|system_end|>"
                          "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
                          "<|user_start|>{user_instruction}<|user_end|><|assistant_start|>")
 
-SUURTOLK_TEMPLATE = ("<s><|system_start|>You are SuurTõlk, the best Estonian-centric language model "
+SUURTOLK_TEMPLATE = ("<|system_start|>You are SuurTõlk, the best Estonian-centric language model "
                      "tailored for conditional text generation tasks.<|system_end|>"
                      "<|developer_start|>Deliberation: disabled\nTool Capabilities: disabled<|developer_end|>"
                      "<|user_start|>{instruct}: {input}<|user_end|><|assistant_start|>")
 
-SUURTOLK_TEMPLATE_TRAIN = SUURTOLK_TEMPLATE + "{output}<|assistant_end|>"
+SUURTOLK_TEMPLATE_TRAIN = SUURTOLK_TEMPLATE + "{output}"
 
 def prep_prompt(data, prompt_format, inference=False):
     if prompt_format in {PF_RAW, PF_RAWLINES}:
