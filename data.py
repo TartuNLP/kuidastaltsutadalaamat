@@ -225,12 +225,12 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
 def load_training_data(path, tokenizer, cmd_args, proc_nums):
     #proc_nums.proc_idx
-    #proc_nums.num_procs
+    #proc_nums.num_proc
 
     dataset = load_dataset("parquet", data_files=path + "/chunk*.parquet", split="train", streaming=True)
 
     # Shard the dataset across your GPUs
-    dataset = dataset.shard(num_shards=proc_nums.num_procs, index=proc_nums.proc_idx)
+    dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
     dataset = dataset.shuffle(buffer_size=10000, seed=42)
