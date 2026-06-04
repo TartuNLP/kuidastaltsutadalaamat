@@ -227,7 +227,7 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_procs
 
-    dataset = load_dataset("parquet", data_files=path, split="train", streaming=True)
+    dataset = load_dataset("parquet", data_files=path + "/chunk*.parquet", split="train", streaming=True)
 
     # Shard the dataset across your GPUs
     dataset = dataset.shard(num_shards=proc_nums.num_procs, index=proc_nums.proc_idx)
