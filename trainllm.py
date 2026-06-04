@@ -194,7 +194,7 @@ def get_fsdp_conf(cmdline_args):
     else:
         return {}
 
-def get_training_args(cmdline_args, acc):
+def get_training_args(cmdline_args, acc, total_batches):
     #auto_find_batch_size
     world_size = acc.num_processes
 
@@ -217,7 +217,7 @@ def get_training_args(cmdline_args, acc):
         num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
         save_total_limit=150,
-        max_steps=100,
+        max_steps=total_batches,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
         save_strategy="steps",
@@ -249,8 +249,6 @@ def simple_train(acc):
 
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
-    training_args = get_training_args(cmd_args, acc)
-
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
 
     model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
@@ -262,7 +260,7 @@ def simple_train(acc):
 
     log(f"Load data", accelerator=acc)
 
-    tokenized_train_data = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
+    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
 
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
@@ -276,6 +274,8 @@ def simple_train(acc):
     log(f"Preparing to train", accelerator=acc)
 
     clbks = [StepTimerCallback] if acc.is_main_process else []
+
+    training_args = get_training_args(cmd_args, acc, total_batches)
 
     trainer = Trainer(
         model=model,

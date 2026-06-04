@@ -4,6 +4,9 @@ import promptops
 import json
 import sys
 
+import pyarrow.parquet as pq
+import glob
+
 from torch.utils.data import Dataset as TorchDataset
 
 from aux import log
@@ -223,22 +226,47 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
     return dataset
 
 
+def data_sanity_check_and_len(path, cmd_args, proc_nums):
+    files = glob.glob(path)
+    lens = [pq.read_metadata(f).num_rows for f in files]
+
+    assert all(e == e[0] for e in lens), "Not all training data files have the same number of rows"
+
+    assert len(files) % proc_nums.num_proc == 0, "Number of files is not divisible by number of processes"
+
+    total_lens = sum(lens)
+
+    nr_batches = total_lens // cmd_args.batch_size
+
+    assert nr_batches * cmd_args.batch_size == total_lens, "batch arithmetics is failing us"
+
+    return nr_batches * cmd_args.epochs
+
 def load_training_data(path, tokenizer, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_proc
 
-    dataset = load_dataset("parquet", data_files=path + "/chunk*.parquet", split="train", streaming=True)
+    full_path = path + "/chunk*.parquet"
+
+    nr_batches = data_sanity_check_and_len(full_path, cmd_args, proc_nums)
+    if proc_nums.proc_idx == 0:
+        log(f"Number of batches for {cmd_args.epochs} epochs: {nr_batches}")
+
+    dataset = load_dataset("parquet", data_files=full_path, split="train", streaming=True)
 
     # Shard the dataset across your GPUs
     dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
-    dataset = dataset.shuffle(buffer_size=10000, seed=42)
+    dataset = dataset.shuffle(buffer_size=10000, seed=18736)
+
+    if cmd_args.epochs > 1:
+        dataset = dataset.repeat(cmd_args.epochs)
 
     def process_and_tokenize(entry):
         return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
 
-    return dataset.map(process_and_tokenize)
+    return dataset.map(process_and_tokenize), nr_batches
 
 def load_training_data_old(path, tokenizer, cmd_args, proc_nums):
 
