@@ -227,9 +227,6 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_procs
 
-    def process_and_tokenize(entry):
-        return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
-
     dataset = load_dataset("parquet", data_files=path, split="train", streaming=True)
 
     # Shard the dataset across your GPUs
@@ -237,6 +234,9 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
     dataset = dataset.shuffle(buffer_size=10000, seed=42)
+
+    def process_and_tokenize(entry):
+        return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
 
     return dataset.map(process_and_tokenize)
 
