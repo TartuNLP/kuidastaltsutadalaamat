@@ -8,6 +8,7 @@ from torch.utils.data import Dataset as TorchDataset
 
 from aux import log
 from convdata import file_to_idx_name
+from datasets import load_dataset
 
 
 def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
@@ -34,32 +35,32 @@ def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
     return tokens
 
 
-def prep_tokenized_prompt_from_entry(entry, selfx):
+def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
     # Return plain Python lists; let the collator pad & build labels.
 
-    try:
-        prompt = promptops.prep_prompt(entry, selfx.prompt_format)
-        result = tokenize_str(selfx.tokenizer, prompt)
-        result['special_tokens_mask'] = [False] * len(result['input_ids'])
-        if selfx.sft_delim is not None:
-            delim_id = selfx.tokenizer.convert_tokens_to_ids(selfx.sft_delim)
-            delim_idx = result['input_ids'].index(delim_id)
-            result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+    #try:
+    prompt = promptops.prep_prompt(entry, selfx.prompt_format)
+    result = tokenize_str(tokenizr, prompt)
+    result['special_tokens_mask'] = [False] * len(result['input_ids'])
+    if selfx.sft_delim is not None:
+        delim_id = tokenizr.convert_tokens_to_ids(selfx.sft_delim)
+        delim_idx = result['input_ids'].index(delim_id)
+        result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
 
-        elif selfx.sft_output_field is not None:
-            no_output_prompt = promptops.prep_prompt(data={**entry, selfx.sft_output_field: ''},
-                                                     prompt_format=selfx.prompt_format)
-            no_output_prompt_tok = tokenize_str(selfx.tokenizer, no_output_prompt)
-            len_to_mask = len(no_output_prompt_tok['input_ids'])
-            result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
+    elif selfx.sft_output_field is not None:
+        no_output_prompt = promptops.prep_prompt(data={**entry, selfx.sft_output_field: ''},
+                                                 prompt_format=selfx.prompt_format)
+        no_output_prompt_tok = tokenize_str(tokenizr, no_output_prompt)
+        len_to_mask = len(no_output_prompt_tok['input_ids'])
+        result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
 
-        return result
+    return result
 
-    except:
-        log("Broken data entry, returning a dummy instead")
-        prompt = "dummy"
-        result = tokenize_str(selfx.tokenizer, prompt)
-        return result
+    #except:
+    #    log("Broken data entry, returning a dummy instead")
+    #    prompt = "dummy"
+    #    result = tokenize_str(selfx.tokenizer, prompt)
+    #    return result
 
 
 
@@ -81,7 +82,7 @@ class LazyTokenizingDataset(TorchDataset):
         return len(self.texts)
 
     def __getitem__(self, idx):
-        return prep_tokenized_prompt_from_entry(self.texts[idx], self)
+        return prep_tokenized_prompt_from_entry(self.texts[idx], self, self.tokenizer)
 
 
 """
@@ -158,7 +159,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         if item is None:
             raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
 
-        result = prep_tokenized_prompt_from_entry(item, self)
+        result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
         return result
 
@@ -222,8 +223,24 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
     return dataset
 
 
-
 def load_training_data(path, tokenizer, cmd_args, proc_nums):
+    #proc_nums.proc_idx
+    #proc_nums.num_procs
+
+    def process_and_tokenize(entry):
+        return prep_tokenized_prompt_from_entry(entry, cmd_args, tokenizer)
+
+    dataset = load_dataset("parquet", data_files=path, split="train", streaming=True)
+
+    # Shard the dataset across your GPUs
+    dataset = dataset.shard(num_shards=proc_nums.num_procs, index=proc_nums.proc_idx)
+
+    # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
+    dataset = dataset.shuffle(buffer_size=10000, seed=42)
+
+    return dataset.map(process_and_tokenize)
+
+def load_training_data_old(path, tokenizer, cmd_args, proc_nums):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,

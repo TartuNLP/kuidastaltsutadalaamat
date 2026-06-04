@@ -275,9 +275,8 @@ def simple_train(acc):
     log(f"Preparing to train", accelerator=acc)
 
     clbks = [StepTimerCallback] if acc.is_main_process else []
-    TrCl = Trainer #LoggingKillingTrainer
 
-    trainer = TrCl(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
@@ -286,9 +285,8 @@ def simple_train(acc):
         callbacks=clbks,
     )
 
-    trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
-
-    logging.set_verbosity_debug()
+    #trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
+    #logging.set_verbosity_debug()
 
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
