@@ -3,6 +3,11 @@ import os
 import json
 import sys
 
+
+GEC_INSTR = "Correct the orthographic, grammatical and other errors in this {lang} text segment"
+DIFF_ID_INSTR = "Identify the language learner level (A1/A2/B1/B2/C1/C2) of the author of this {lang} text segment"
+
+
 def parse_lang(lang_code, syn):
     dct = {
         'ar': 'Arabic',
@@ -120,9 +125,9 @@ def file_to_idx_name(folder, idx):
     return f"{folder}/{idx}.jsonl"
 
 
-def say_no_to_global_variables():
-    num_threads = int(sys.argv[1])
-    in_filename = sys.argv[2]
+def jsonl_to_multiple_lines():
+    num_threads = int(sys.argv[2])
+    in_filename = sys.argv[3]
     out_folder = prep_out_folder(in_filename)
 
     out_fhs = [open(file_to_idx_name(out_folder, i), 'w')
@@ -131,6 +136,106 @@ def say_no_to_global_variables():
     with open(in_filename, 'r') as fh_in:
         for ii, line in enumerate(fh_in):
             out_fhs[ii % num_threads].write(line)
+
+
+########################################################################
+# MultiGEC
+########################################################################
+
+def multigec_read_header(line):
+    fields = line.split(' ')
+
+    err_msg = f"Tried to read MultiGEC header, but got unexpected input: {line}"
+
+    assert line.startswith("### essay_id = "), err_msg
+
+    if len(fields) == 4:
+        result = None
+    elif len(fields) == 5:
+        if fields[4].startswith('(') and fields[4].endswith(')'):
+            result = fields[4].strip('()')
+        else:
+            result = None
+    else:
+        raise Exception(err_msg)
+
+    return result
+
+
+def multigec_read_one(filename):
+    with open(filename, 'r') as fh_in:
+        result = []
+
+        header = None
+        raw_buf = []
+
+        for raw_line in fh_in:
+            line = raw_line.strip()
+
+            if line.startswith("### essay_id = "):
+                assert header is None
+
+                header = multigec_read_header(line)
+            elif line.strip() == '':
+                if header is not None and len(raw_buf) > 0:
+                    result.append((header, raw_buf))
+
+                header = None
+                raw_buf = []
+
+            else:
+                raw_buf.append(line)
+
+        return result
+
+def get_lang_from_filename(flname):
+    result = None
+
+    for cand_lang in "English Estonian German Latvian Russian Swedish Ukrainian".split(" "):
+        if cand_lang.lower() in flname.lower():
+            assert result is None
+            result = cand_lang
+
+    return result
+
+
+def do_instr(instr, inp, outp):
+    print(json.dumps({'instruct': instr, 'input': inp, 'output': outp}))
+
+
+def multigec_to_instructions():
+    orig_data = multigec_read_one(sys.argv[2])
+    ref_data = multigec_read_one(sys.argv[3])
+
+    file_lang = get_lang_from_filename(sys.argv[2])
+    langx = get_lang_from_filename(sys.argv[3])
+    assert file_lang == langx
+
+    assert len(orig_data) == len(ref_data)
+
+    for entry_orig, entry_ref in zip(orig_data, ref_data):
+        assert entry_orig[0] == entry_ref[0]
+
+        do_instr(GEC_INSTR.format(lang=file_lang), ' '.join(entry_orig[1]), ' '.join(entry_ref[1]))
+
+        if entry_orig[0] is not None:
+            do_instr(DIFF_ID_INSTR.format(lang=file_lang), ' '.join(entry_orig[1]), entry_orig[0])
+            do_instr(DIFF_ID_INSTR.format(lang=file_lang), ' '.join(entry_ref[1]), entry_orig[0])
+
+
+def est_gecde_to_instructions():
+    pass
+
+    
+def say_no_to_global_variables():
+    cmd = sys.argv[1]
+
+    if cmd == 'jsonl':
+        jsonl_to_multiple_lines()
+    elif cmd == 'multigec':
+        multigec_to_instructions()
+    elif cmd == 'estgecde':
+        est_gecde_to_instructions()
 
 if __name__ == '__main__':
     say_no_to_global_variables()
