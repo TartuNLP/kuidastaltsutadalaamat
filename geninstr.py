@@ -123,6 +123,8 @@ def multigec_to_instructions():
 
     assert len(orig_data) == len(ref_data)
 
+    log(f"Successfully read {len(orig_data)} pairs")
+
     for entry_orig, entry_ref in zip(orig_data, ref_data):
         assert entry_orig[0] == entry_ref[0]
 
