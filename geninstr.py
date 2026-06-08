@@ -94,7 +94,8 @@ def multigec_read_one(filename):
 
                 header = multigec_read_header(line)
             else:
-                raw_buf.append(line)
+                if line.strip():
+                    raw_buf.append(line)
         if header is not None and len(raw_buf) > 0:
             result.append((header, raw_buf))
 
