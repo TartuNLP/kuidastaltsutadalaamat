@@ -14,7 +14,6 @@ INSTR_GECSNT = ("Correct the orthographic, grammatical and other errors in this 
                 "given preceding context sentences")
 INPUT_GECSNT = "Input context: {context}\nInput sentence: {input_sent}"
 
-
 INSTR_DIFF_ID = "Identify the language learner level (A1/A2/B1/B2/C1/C2) of the author of this {synth}{lang} text segment"
 
 
