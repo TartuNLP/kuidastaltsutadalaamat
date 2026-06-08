@@ -64,12 +64,12 @@ def multigec_read_header(line):
     assert line.startswith("### essay_id = "), err_msg
 
     if len(fields) == 4:
-        result = None
+        result = '-'
     elif len(fields) == 5:
         if fields[4].startswith('(') and fields[4].endswith(')'):
             result = fields[4].strip('()')
         else:
-            result = None
+            result = '-'
     else:
         raise Exception(err_msg)
 
@@ -130,7 +130,7 @@ def multigec_to_instructions():
 
         do_instr(INSTR_GEC.format(lang=file_lang, synth=""), ' '.join(entry_orig[1]), ' '.join(entry_ref[1]))
 
-        if entry_orig[0] is not None:
+        if entry_orig[0] != '-':
             do_instr(INSTR_DIFF_ID.format(lang=file_lang, synth=""), ' '.join(entry_orig[1]), entry_orig[0])
             do_instr(INSTR_DIFF_ID.format(lang=file_lang, synth=""), ' '.join(entry_ref[1]), entry_orig[0])
 
