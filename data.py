@@ -132,8 +132,8 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         return result
 
-    def __len__(self):
-        return self.data_len
+    #def __len__(self):
+    #    return self.data_lengi
 
     def _restart_iters(self):
         if self.proc_nums.proc_idx == 0:
