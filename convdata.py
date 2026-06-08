@@ -102,12 +102,12 @@ def iter_stdin_json_items(fh):
             yield entr
 
 
-def file_to_base_folder(filename):
-    return '.'.join(filename.split('.')[:-1])
+def file_to_base_folder(filename, num_threads):
+    return '.'.join(filename.split('.')[:-1]) + "-" + str(num_threads)
 
 
-def prep_out_folder(filename):
-    folder_name = file_to_base_folder(filename)
+def prep_out_folder(filename, num_threads):
+    folder_name = file_to_base_folder(filename, num_threads)
 
     if os.path.exists(folder_name):
         raise Exception(f"Output folder '{folder_name}' already exists, don't want to overwrite.")
@@ -124,7 +124,7 @@ def file_to_idx_name(folder, idx):
 def jsonl_to_multiple_files():
     num_threads = int(sys.argv[1])
     in_filename = sys.argv[2]
-    out_folder = prep_out_folder(in_filename)
+    out_folder = prep_out_folder(in_filename, num_threads)
 
     out_fhs = [open(file_to_idx_name(out_folder, i), 'w')
                for i in range(num_threads)]
