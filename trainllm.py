@@ -286,7 +286,7 @@ def simple_train(acc):
         callbacks=clbks,
     )
 
-    #trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
+    trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
     #logging.set_verbosity_debug()
 
     log(f"Starting training", accelerator=acc)
