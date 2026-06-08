@@ -184,7 +184,7 @@ def _parse_corrections(raw_corrections):
     return result
 
 
-def _filter_corrections(raw_corrections, cl=False, corr=False):
+def _filter_corrections(parsed_corrections, cl=False, corr=False):
     output_fields = []
 
     if cl:
@@ -192,9 +192,7 @@ def _filter_corrections(raw_corrections, cl=False, corr=False):
     if corr:
         output_fields.append('correction')
 
-    corr_list = _parse_corrections(raw_corrections)
-
-    flt_list = [": ".join([ic._asdict()[ky] for ky in output_fields]) for ic in corr_list]
+    flt_list = [": ".join([ic._asdict()[ky] for ky in output_fields]) for ic in parsed_corrections]
 
     return "\n".join(flt_list)
 
@@ -219,6 +217,11 @@ def est_gee_to_instr(entry):
         ctx_snt = " with preceding context sentences"
         tmpl = SNTPAIR_INPUT_WCTX
 
+    try:
+        parsed_corr = _parse_corrections(entry['parandused'])
+    except Exception as e:
+        return
+
     # list corrections (w/wo ctx):
     #   (kontekst,) algne_lause, parandatud_lause --> parandused (no classes)
     do_instr(
@@ -226,7 +229,7 @@ def est_gee_to_instr(entry):
         tmpl.format(input_sent=entry['algne_lause'],
                     corr_sent=entry['parandatud_lause'],
                     context=entry['kontekst']),
-        _filter_corrections(entry['parandused'], corr=True))
+        _filter_corrections(parsed_corr, corr=True))
 
     # list and classify corrections (w/wo ctx):
     #   (kontekst,) algne_lause, parandatud_lause --> parandused
@@ -235,7 +238,7 @@ def est_gee_to_instr(entry):
         tmpl.format(input_sent=entry['algne_lause'],
                     corr_sent=entry['parandatud_lause'],
                     context=entry['kontekst']),
-        _filter_corrections(entry['parandused'], cl=True, corr=True))
+        _filter_corrections(parsed_corr, cl=True, corr=True))
 
     # classify corrections (w/wo ctx):
     #   (kontekst,) algne_lause, parandatud_lause, parandused (no classes) --> parandused (yes classes)
@@ -244,8 +247,8 @@ def est_gee_to_instr(entry):
         tmpl.format(input_sent=entry['algne_lause'],
                     corr_sent=entry['parandatud_lause'],
                     context=entry['kontekst'])
-        + SNTPAIR_INPUT_CORRS.format(corrs=_filter_corrections(entry['parandused'], corr=True)),
-        _filter_corrections(entry['parandused'], cl=True, corr=True))
+        + SNTPAIR_INPUT_CORRS.format(corrs=_filter_corrections(parsed_corr, corr=True)),
+        _filter_corrections(parsed_corr, cl=True, corr=True))
 
     #################
     corr_key = _get_corr_key(entry)
