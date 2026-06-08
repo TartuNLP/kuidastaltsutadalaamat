@@ -258,7 +258,7 @@ def est_gee_to_instr(entry):
                 input_sent=entry['algne_lause'],
                 corr_sent=entry['parandatud_lause'],
                 context=entry['kontekst'])
-            + SNTPAIR_INPUT_CORRS.format(corrs=_filter_corrections(entry['parandused'], corr=True)))
+            + SNTPAIR_INPUT_CORRS.format(corrs=_filter_corrections(parsed_corr, corr=True)))
 
     second_part_without_class = SNTPAIR_INPUT_FOCUS_CORR.format(corr=entry[corr_key])
     second_part_with_class = SNTPAIR_INPUT_FOCUS_CORR.format(corr=entry['vealiik'] + ": " + entry[corr_key])
