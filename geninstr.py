@@ -48,12 +48,7 @@ CORR_COMPL = "comprehensive and detailed"
 OUTPUT_EXPL_CLASS = "Correction class: {class_name}\nJustification: {justif}"
 
 def do_instr(instr, inp, outp):
-    #print(json.dumps({'instruct': instr, 'input': inp, 'output': outp}))
-    print("TEMPORARY INSTR")
-    print("INSTR:", instr)
-    print("INPUT:", inp)
-    print("OUTPUT:", outp)
-    print("")
+    print(json.dumps({'instruct': instr, 'input': inp, 'output': outp}))
 
 ########################################################################
 # MultiGEC
