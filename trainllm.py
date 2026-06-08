@@ -30,7 +30,7 @@ from transformers import (
     TrainerCallback
 )
 from collections import namedtuple
-from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
+#from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
 
 MEM_CHECK_KAMIKAZE = False
 
@@ -209,8 +209,7 @@ def get_training_args(cmdline_args, acc, total_batches):
     dpspd_conf = get_deepspeed_conf(cmdline_args, accum_steps)
     fsdp_conf = get_fsdp_conf(cmdline_args)
 
-    #tr_args = TrainingArguments(
-    tr_args = SFTConfig(
+    tr_args = TrainingArguments(
         output_dir=cmdline_args.save_location,
         per_device_train_batch_size=cmdline_args.nr_sents_per_gpu,
         gradient_accumulation_steps=accum_steps,
