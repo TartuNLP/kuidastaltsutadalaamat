@@ -311,7 +311,8 @@ def say_no_to_global_variables():
         multigec_to_instructions()
     elif cmd == 'estgecde':
         est_gecde_to_instructions()
-
+    else:
+        raise Exception(f"Unknown command: {cmd}")
 
 if __name__ == '__main__':
     say_no_to_global_variables()
