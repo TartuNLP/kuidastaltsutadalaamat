@@ -87,18 +87,16 @@ def multigec_read_one(filename):
             line = raw_line.strip()
 
             if line.startswith("### essay_id = "):
-                assert header is None
-
-                header = multigec_read_header(line)
-            elif line.strip() == '':
                 if header is not None and len(raw_buf) > 0:
                     result.append((header, raw_buf))
 
-                header = None
                 raw_buf = []
 
+                header = multigec_read_header(line)
             else:
                 raw_buf.append(line)
+        if header is not None and len(raw_buf) > 0:
+            result.append((header, raw_buf))
 
         return result
 
