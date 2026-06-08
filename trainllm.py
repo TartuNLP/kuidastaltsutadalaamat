@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 
+from torch.utils.data import SequentialSampler
+
 import promptops
 from aux import log, CmdlineArgs, env_stuff
 from modelops import load_model, load_tokenizer
@@ -9,6 +11,7 @@ from data import load_training_data
 import subprocess
 import sys
 import os
+import types
 
 import torch
 if not hasattr(torch, "float8_e8m0fnu"):
