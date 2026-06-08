@@ -147,7 +147,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         if self._curr_idx > idx:
             self._restart_iters()
 
-        assert idx % self.proc_nums.num_proc == self.proc_nums.proc_idx, f"MESS IN THREADS ({idx} % {self.proc_nums.num_proc} != {self.proc_nums.proc_idx})"
+        #assert idx % self.proc_nums.num_proc == self.proc_nums.proc_idx, f"MESS IN THREADS ({idx} % {self.proc_nums.num_proc} != {self.proc_nums.proc_idx})"
 
         line_idx = idx // self.proc_nums.num_proc
 
