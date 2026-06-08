@@ -12,9 +12,11 @@ IndiCorr = namedtuple('IndiCorr', 'err_class correction')
 
 INSTR_GEC = "Correct the orthographic, grammatical and other errors in this {synth}{lang} text segment"
 
-INSTR_GECSNT = ("Correct the orthographic, grammatical and other errors in this {synth}Estonian sentence, "
-                "given preceding context sentences")
+INSTR_GECSNT = "Correct the orthographic, grammatical and other errors in this {synth}Estonian sentence{context}"
+INSTR_GECSNT_CTX = ", given preceding context sentences"
+
 INPUT_GECSNT = "Input context: {context}\nInput sentence: {input_sent}"
+INPUT_GECSNT_NOCTX = "Input sentence: {input_sent}"
 
 INSTR_DIFF_ID = "Identify the language learner level (A1/A2/B1/B2/C1/C2) of the author of this {synth}{lang} text segment"
 
@@ -158,9 +160,19 @@ def est_gec_to_instr(entry, is_synth):
             entry['prof_level'])
 
     elif 'input_sent' in entry:
+        if entry['context'].endswith(entry['input_sent']):
+            entry['context'] = entry['context'][:-len(entry['input_sent'])]
+
+        if entry['context'].strip():
+            ctx = INSTR_GECSNT_CTX
+            tmpl = INPUT_GECSNT
+        else:
+            ctx = ""
+            tmpl = INPUT_GECSNT_NOCTX
+
         do_instr(
-            INSTR_GECSNT.format(synth=("synthetic " if is_synth else "")),
-            INPUT_GECSNT.format(**entry),
+            INSTR_GECSNT.format(synth=("synthetic " if is_synth else ""), context=ctx),
+            tmpl.format(**entry),
             entry['output_sent'])
 
 
