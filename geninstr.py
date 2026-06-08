@@ -176,7 +176,10 @@ def _parse_corrections(raw_corrections):
 
     for raw_correction in raw_corrections.split('\n'):
         m = re.fullmatch(r'^([0-9]+). ([^:]+): (.+ -> .+)$', raw_correction)
-        result.append(IndiCorr(m.group(2), m.group(3)))
+        if m is None:
+            raise Exception(f"Could not parse correction: {raw_correction}")
+        else:
+            result.append(IndiCorr(m.group(2), m.group(3)))
 
     return result
 
