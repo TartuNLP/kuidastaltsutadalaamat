@@ -259,18 +259,18 @@ def simple_train(acc):
         model.config.pad_token_id = tokenizer.pad_token_id
 
     log(f"Load data", accelerator=acc)
-    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, cmd_args, proc_nums)
+    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
 
-    #data_collator = DataCollatorForLanguageModeling(
-    #    tokenizer=tokenizer,
-    #    mlm=True,
-    #    mlm_probability=1,
-    #    random_replace_prob=0,
-    #    mask_replace_prob=0,
-    #    pad_to_multiple_of=8,
-    #)
+    data_collator = DataCollatorForLanguageModeling(
+        tokenizer=tokenizer,
+        mlm=True,
+        mlm_probability=1,
+        random_replace_prob=0,
+        mask_replace_prob=0,
+        pad_to_multiple_of=8,
+    )
 
-    data_collator = DataCollatorForCompletionOnlyLM(cmd_args.sft_delim, tokenizer=tokenizer)
+    #data_collator = DataCollatorForCompletionOnlyLM(cmd_args.sft_delim, tokenizer=tokenizer)
 
     log(f"Preparing to train", accelerator=acc)
 

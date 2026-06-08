@@ -242,7 +242,7 @@ def data_sanity_check_and_len(path, cmd_args, proc_nums):
 
     return nr_batches * cmd_args.epochs
 
-def load_training_data(path, cmd_args, proc_nums):
+def load_training_data_new(path, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_proc
 
@@ -269,7 +269,7 @@ def load_training_data(path, cmd_args, proc_nums):
 
     return dataset.map(process_and_tokenize), nr_batches
 
-def load_training_data_old(path, tokenizer, cmd_args, proc_nums):
+def load_training_data(path, tokenizer, cmd_args, proc_nums):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
