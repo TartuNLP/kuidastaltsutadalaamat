@@ -151,7 +151,8 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         line_idx = idx // self.proc_nums.num_proc
 
-        assert self._curr_idx == line_idx - 1, "LINES SKIPPED"
+        msg = f"LINES SKIPPED: {self._curr_idx} should be equal to {line_idx - 1}"
+        assert self._curr_idx == line_idx - 1, msg
 
         self._curr_idx += 1
         item_rawstr = next(self.d_iter)
