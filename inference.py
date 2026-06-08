@@ -2,7 +2,8 @@
 
 import promptops
 
-from aux import CmdlineArgs, log, load_model, load_tokenizer, env_stuff
+from aux import CmdlineArgs, log, env_stuff
+from modelops import load_model, load_tokenizer
 from data import get_data_loader
 
 import sys

@@ -5,6 +5,8 @@ import re
 
 from collections import namedtuple
 
+from aux import log
+
 IndiCorr = namedtuple('IndiCorr', 'err_class correction')
 
 

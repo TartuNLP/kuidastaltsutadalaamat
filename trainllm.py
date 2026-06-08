@@ -2,7 +2,8 @@
 from datetime import datetime, timedelta
 
 import promptops
-from aux import log, CmdlineArgs, load_model, load_tokenizer, env_stuff
+from aux import log, CmdlineArgs, env_stuff
+from modelops import load_model, load_tokenizer
 from data import load_training_data
 
 import subprocess
