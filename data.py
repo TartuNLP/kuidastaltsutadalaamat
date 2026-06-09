@@ -305,5 +305,6 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
                                                cmd_args.sft_output_field)
 
     nr_batches = train_set_iter.data_len * proc_nums.num_proc // cmd_args.batch_size
+    log(f"nr_batches {nr_batches} = data_len {train_set_iter.data_len} * num_proc {proc_nums.num_proc} // batch_size {cmd_args.batch_size}")
     return train_set_iter, nr_batches
 
