@@ -48,8 +48,13 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
     result['special_tokens_mask'] = [False] * len(result['input_ids'])
     if selfx.sft_delim is not None:
         delim_id = tokenizr.convert_tokens_to_ids(selfx.sft_delim)
-        delim_idx = result['input_ids'].index(delim_id)
-        result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+
+        try:
+            delim_idx = result['input_ids'].index(delim_id)
+            result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+        except ValueError:
+            log(f"STRANGE WARNING: {entry} with prompt {selfx.prompt_format} turned into {prompt} "
+                f"is supposedly missing the delimiter {selfx.sft_delim}; whole entry passed for learning")
 
     elif selfx.sft_output_field is not None:
         no_output_prompt = promptops.prep_prompt(data={**entry, selfx.sft_output_field: ''},
