@@ -53,7 +53,8 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
             delim_idx = result['input_ids'].index(delim_id)
             result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
         except ValueError:
-            log(f"STRANGE WARNING: {entry} with prompt {selfx.prompt_format} turned into {prompt} "
+            rep_prompt = prompt if len(prompt) <= 300 else prompt[:300] + "..."
+            log(f"STRANGE WARNING: prompt {rep_prompt} "
                 f"is supposedly missing the delimiter {selfx.sft_delim}; whole entry passed for learning")
 
     elif selfx.sft_output_field is not None:
