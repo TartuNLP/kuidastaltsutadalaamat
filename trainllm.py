@@ -288,7 +288,7 @@ def simple_train(acc):
 
     #data_collator = DataCollatorForCompletionOnlyLM(cmd_args.sft_delim, tokenizer=tokenizer)
 
-    log(f"Preparing to train", accelerator=acc)
+    log(f"Preparing to train with {total_batches} steps", accelerator=acc)
 
     clbks = [StepTimerCallback] if acc.is_main_process else []
 
