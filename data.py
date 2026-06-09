@@ -118,14 +118,14 @@ class LazyTokenizingIterDataset(TorchDataset):
         return file_to_idx_name(self.path, shard_idx)
 
     def _get_data_len(self):
-        result = 0
         if self.proc_nums.proc_idx == 0:
             log("Computing length")
 
-        for i in range(self.proc_nums.num_proc):
-            with open(self._get_this_shard_name(shard_idx=i), "r") as fh0:
-                for _ in fh0:
-                    result += 1
+        #for i in range(self.proc_nums.num_proc):
+        result = 0
+        with open(self._get_this_shard_name(shard_idx=self.proc_nums.proc_idx), "r") as fh0:
+            for _ in fh0:
+                result += 1
 
         if self.proc_nums.proc_idx == 0:
             log(f"Length computed: {result}")
@@ -289,5 +289,6 @@ def load_training_data(path, tokenizer, cmd_args, proc_nums):
                                                cmd_args.sft_delim,
                                                cmd_args.sft_output_field)
 
-    return train_set_iter, train_set_iter.data_len
+    nr_batches = train_set_iter.data_len * proc_nums.num_proc // cmd_args.batch_size
+    return train_set_iter, nr_batches
 
