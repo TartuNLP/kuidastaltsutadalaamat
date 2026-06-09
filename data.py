@@ -8,6 +8,7 @@ import pyarrow.parquet as pq
 import glob
 
 from torch.utils.data import Dataset as TorchDataset
+from torch.utils.data import IterableDataset
 
 from aux import log
 from convdata import file_to_idx_name
@@ -92,7 +93,7 @@ class LazyTokenizingDataset(TorchDataset):
 Go through texts iteratively without loading into memory,
 returning tokenized tensors for readily formed prompts.
 """
-class LazyTokenizingIterDataset(TorchDataset):
+class LazyTokenizingIterDataset(IterableDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
                  prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None):
         self.path = path
@@ -110,7 +111,7 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         self._curr_idx = 1e400
 
-        self._restart_iters()
+        #self._restart_iters()
 
     def _get_this_shard_name(self, shard_idx=None):
         if shard_idx is None:
@@ -132,10 +133,10 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         return result
 
-    def __len__(self):
-        return self.data_len
+    #def __len__(self):
+    #    return self.data_len
 
-    def _restart_iters(self):
+    def ___restart_iters(self):
         if self.proc_nums.proc_idx == 0:
             log("Restarting iterator")
 
@@ -143,6 +144,20 @@ class LazyTokenizingIterDataset(TorchDataset):
 
         self._curr_idx = -1
 
+    def __iter__(self):
+        with open(self._get_this_shard_name(), "r") as fh:
+            for item_rawstr in fh:
+                item = json.loads(item_rawstr)
+
+                if item is None:
+                    raise Exception(
+                        f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
+
+                result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
+
+                yield result
+
+    """
     def __getitem__(self, idx):
         if self._curr_idx > idx:
             self._restart_iters()
@@ -166,7 +181,7 @@ class LazyTokenizingIterDataset(TorchDataset):
         result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
         return result
-
+"""
 
 class LazyTokenizingInferenceDataset(TorchDataset):
     def __init__(self, texts, tokenizer, prompt_format, max_length=512, debug=False):
