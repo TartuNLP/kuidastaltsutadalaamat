@@ -216,7 +216,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         output_dir=cmdline_args.save_location,
         per_device_train_batch_size=cmdline_args.nr_sents_per_gpu,
         gradient_accumulation_steps=accum_steps,
-        num_train_epochs=cmdline_args.epochs,
+        #num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
         save_total_limit=150,
         max_steps=total_batches,
@@ -327,7 +327,7 @@ class LoggingKillingTrainer(Trainer):
         #return super().compute_loss(model, inputs, **kwargs)
 
 if __name__ == "__main__":
-    #env_stuff()
+    env_stuff()
 
     timeout_kwargs = InitProcessGroupKwargs(timeout=timedelta(seconds=1200))
     accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])
