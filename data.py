@@ -154,7 +154,11 @@ class LazyTokenizingIterDataset(IterableDataset):
     def __iter__(self):
         with open(self._get_this_shard_name(), "r") as fh:
             for item_rawstr in fh:
+                log(f"PROMPT_LOG_START")
+
                 item = json.loads(item_rawstr)
+
+                log(f"PROMPT_LOG_LOADED /// {item}")
 
                 if item is None:
                     raise Exception(
@@ -162,7 +166,7 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
-                log(f"PROMPT_LOG /// {item} /// {result}")
+                log(f"PROMPT_LOG_TOKENIZED /// {result}")
 
                 yield result
 

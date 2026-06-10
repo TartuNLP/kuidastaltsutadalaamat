@@ -263,14 +263,15 @@ class BatchTrackingTrainer(Trainer):
     def training_step(self, model, inputs, *args, **kwargs):
         # 'inputs' is your current minibatch!
         # Execute your custom 'on_step_begin' logic right here.
-        log(f"BATCH_LOG_KEYS: {inputs.keys()}")
-        log(f"BATCH_LOG_FULL: {inputs}")
+        log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
+
+        log(f"BATCH_LOG_DATA: {log_msg}")
 
         # Execute the standard forward and backward pass
         loss = super().training_step(model, inputs, *args, **kwargs)
 
         # Execute your custom 'on_step_end' logic right here.
-        log(f"Finished step. Loss: {loss.item()}")
+        log(f"BATCH_LOG_LOSS: {loss.item()}")
 
         return loss
 
