@@ -312,7 +312,8 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    trainer = BatchTrackingTrainer(
+    #trainer = BatchTrackingTrainer(
+    trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
