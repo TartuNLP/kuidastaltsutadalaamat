@@ -2,6 +2,7 @@
 import os
 import json
 import sys
+from random import shuffle
 
 
 def parse_lang(lang_code, syn):
@@ -131,7 +132,16 @@ def jsonl_to_multiple_files():
 
     with open(in_filename, 'r') as fh_in:
         for ii, line in enumerate(fh_in):
+            if ii % num_threads == 0:
+                shuffle(out_fhs)
+
             out_fhs[ii % num_threads].write(line)
+
+        #to ensure same size of chunks
+        ii += 1
+        while ii % num_threads != 0:
+            out_fhs[ii % num_threads].write(line)
+            ii += 1
 
     
 def say_no_to_global_variables():
