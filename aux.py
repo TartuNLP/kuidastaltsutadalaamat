@@ -210,10 +210,6 @@ class CmdlineArgs:
 
 
 def env_stuff():
-    if os.environ.get("MASTER_ADDR", "NOPE") == "NOPE":
-        log("No old-school env init needed")
-        return
-
     os.environ.setdefault("LOCAL_RANK", os.environ.get("SLURM_LOCALID", "---"))
     os.environ.setdefault("RANK", os.environ.get("SLURM_PROCID", "0"))
     os.environ.setdefault("WORLD_SIZE", os.environ.get("SLURM_NTASKS", "1"))
