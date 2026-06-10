@@ -149,7 +149,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "stage": 2,
                 "offload_optimizer": { "device": "none" },
                 "allgather_partitions": True,
-                "overlap_comm": False,
+                "overlap_comm": True,
                 "allgather_bucket_size": 500000000,
                 "reduce_scatter": True,
                 "reduce_bucket_size": 500000000,
