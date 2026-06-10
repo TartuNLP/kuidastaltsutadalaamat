@@ -158,9 +158,11 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 if item is None:
                     raise Exception(
-                        f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
+                        f"This should not have happened")
 
                 result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
+
+                log(f"PROMPT_LOG /// {item} /// {result}")
 
                 yield result
 
