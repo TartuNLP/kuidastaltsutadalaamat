@@ -258,6 +258,23 @@ class PreshTrainer(Trainer):
         )
 """
 
+
+class BatchTrackingTrainer(Trainer):
+    def training_step(self, model, inputs, *args, **kwargs):
+        # 'inputs' is your current minibatch!
+        # Execute your custom 'on_step_begin' logic right here.
+        log(f"BATCH_LOG_KEYS: {inputs.keys()}")
+        log(f"BATCH_LOG_FULL: {inputs}")
+
+        # Execute the standard forward and backward pass
+        loss = super().training_step(model, inputs, *args, **kwargs)
+
+        # Execute your custom 'on_step_end' logic right here.
+        log(f"Finished step. Loss: {loss.item()}")
+
+        return loss
+
+
 def simple_train(acc):
     cmd_args = _cmdline_args(acc)
     proc_nums = namedtuple("ProcNums",
@@ -294,7 +311,7 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    trainer = Trainer(
+    trainer = BatchTrackingTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
