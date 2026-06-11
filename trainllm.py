@@ -9,8 +9,6 @@ from modelops import load_model, load_tokenizer
 from data import load_training_data
 
 import subprocess
-import sys
-import os
 import types
 
 import torch
@@ -29,8 +27,8 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForLanguageModeling,
-    logging,
-    TrainerCallback
+    TrainerCallback,
+    logging
 )
 from collections import namedtuple
 #from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
@@ -150,9 +148,9 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "offload_optimizer": { "device": "none" },
                 "allgather_partitions": True,
                 "overlap_comm": True,
-                "allgather_bucket_size": 500000000,
+                "allgather_bucket_size": 50000000,
                 "reduce_scatter": True,
-                "reduce_bucket_size": 500000000,
+                "reduce_bucket_size": 50000000,
                 "contiguous_gradients": True
             },
 
@@ -239,26 +237,12 @@ def get_training_args(cmdline_args, acc, total_batches):
     return tr_args
 
 
-from torch.utils.data import DataLoader
-from transformers import Trainer
-
-"""
-class PreshTrainer(Trainer):
-    def get_train_dataloader(self):
-        # Bypasses the DistributedSampler entirely
-        return DataLoader(
-            self.train_dataset,
-            batch_size=self.args.per_device_train_batch_size,
-            shuffle=False
-        )
-"""
-
-
 class BatchTrackingTrainer(Trainer):
     def training_step(self, model, inputs, *args, **kwargs):
         # 'inputs' is your current minibatch!
         # Execute your custom 'on_step_begin' logic right here.
-        log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
+        #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
+        log_msg = " / ".join([f"{k}" for k in inputs.keys()])
 
         log(f"BATCH_LOG_DATA: {log_msg}")
 
@@ -307,8 +291,8 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    #trainer = BatchTrackingTrainer(
-    trainer = Trainer(
+    trainer = BatchTrackingTrainer(
+    #trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
@@ -318,14 +302,14 @@ def simple_train(acc):
     )
 
     trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
-    #logging.set_verbosity_debug()
+    logging.set_verbosity_debug()
 
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
 
-    #log(f"Done, saving model", accelerator=acc)
-    #trainer.save_model()
-    log(f"Done training", accelerator=acc)
+    log(f"Done, saving model", accelerator=acc)
+    trainer.save_model()
+    log(f"All done!", accelerator=acc)
 
 
 """
