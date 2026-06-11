@@ -305,8 +305,6 @@ def simple_train(acc):
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
 
-    log(f"Done, saving model", accelerator=acc)
-    trainer.save_model()
     log(f"All done!", accelerator=acc)
 
 
