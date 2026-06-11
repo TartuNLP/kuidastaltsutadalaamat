@@ -116,8 +116,6 @@ class LazyTokenizingIterDataset(IterableDataset):
 
         self.data_len = self._get_data_len()
 
-        self._curr_idx = 1e400
-
         #self._restart_iters()
 
     def _get_this_shard_name(self, shard_idx=None):
@@ -149,12 +147,10 @@ class LazyTokenizingIterDataset(IterableDataset):
 
         self.d_iter = open(self._get_this_shard_name(), "r")
 
-        self._curr_idx = -1
-
     def __iter__(self):
         with open(self._get_this_shard_name(), "r") as fh:
             for item_rawstr in fh:
-                #log(f"PROMPT_LOG_START")
+                log(f"PROMPT_LOG_START")
 
                 item = json.loads(item_rawstr)
 
@@ -166,7 +162,7 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
-                #log(f"PROMPT_LOG_TOKENIZED /// {result}")
+                log(f"PROMPT_LOG_TOKENIZED /// {str(result)[:100]}")
 
                 yield result
 
