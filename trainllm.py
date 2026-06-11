@@ -238,7 +238,19 @@ def get_training_args(cmdline_args, acc, total_batches):
     return tr_args
 
 
-class BatchTrackingTrainer(Trainer):
+class NoShardTrainer(Trainer):
+    def get_train_dataloader(self):
+        from torch.utils.data import DataLoader
+        return DataLoader(
+            self.train_dataset,
+            batch_size=self.args.per_device_train_batch_size,
+            collate_fn=self.data_collator,
+            num_workers=self.args.dataloader_num_workers,
+            pin_memory=self.args.dataloader_pin_memory,
+        )
+
+
+class BatchTrackingTrainer(NoShardTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
         #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
         log_msg = " / ".join([f"{k}" for k in inputs.keys()])
@@ -288,7 +300,7 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    TrainerClass = BatchTrackingTrainer if cmd_args.debug else Trainer
+    TrainerClass = BatchTrackingTrainer if cmd_args.debug else NoShardTrainer
     trainer = TrainerClass(
         model=model,
         args=training_args,
