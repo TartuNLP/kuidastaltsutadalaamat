@@ -212,7 +212,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         gradient_accumulation_steps=accum_steps,
         #num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
-        save_total_limit=150,
+        save_total_limit=2,
         max_steps=total_batches,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
