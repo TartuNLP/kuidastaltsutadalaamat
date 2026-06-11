@@ -102,7 +102,7 @@ returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(IterableDataset):
     def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
-                 prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None):
+                 prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None, debug=False):
         self.path = path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -110,6 +110,7 @@ class LazyTokenizingIterDataset(IterableDataset):
         self.sft_delim = sft_delim
         self.sft_output_field = sft_output_field
         self.max_dist = max_dist
+        self.debug = debug
 
         self.d_iter = None
         self.proc_nums = proc_nums
@@ -124,7 +125,7 @@ class LazyTokenizingIterDataset(IterableDataset):
         return file_to_idx_name(self.path, shard_idx)
 
     def _get_data_len(self):
-        if self.proc_nums.proc_idx == 0:
+        if self.proc_nums.proc_idx == 0 and self.debug:
             log("Computing length")
 
         #for i in range(self.proc_nums.num_proc):
@@ -133,7 +134,7 @@ class LazyTokenizingIterDataset(IterableDataset):
             for _ in fh0:
                 result += 1
 
-        if self.proc_nums.proc_idx == 0:
+        if self.proc_nums.proc_idx == 0 and self.debug:
             log(f"Length computed: {result}")
 
         return result
@@ -142,19 +143,22 @@ class LazyTokenizingIterDataset(IterableDataset):
     #    return self.data_len
 
     def ___restart_iters(self):
-        if self.proc_nums.proc_idx == 0:
+        if self.proc_nums.proc_idx == 0 and self.debug:
             log("Restarting iterator")
 
         self.d_iter = open(self._get_this_shard_name(), "r")
 
     def __iter__(self):
+        # TODO currently loading from mid-training and skipping some data is not implemented!
         with open(self._get_this_shard_name(), "r") as fh:
             for item_rawstr in fh:
-                #log(f"PROMPT_LOG_START")
+                if self.debug:
+                    log(f"PROMPT_LOG_START")
 
                 item = json.loads(item_rawstr)
 
-                #log(f"PROMPT_LOG_LOADED /// {item}")
+                if self.debug:
+                    log(f"PROMPT_LOG_LOADED /// {str(item)[:200]}")
 
                 if item is None:
                     raise Exception(
@@ -162,7 +166,8 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
-                #log(f"PROMPT_LOG_TOKENIZED /// {str(result)[:100]}")
+                if self.debug:
+                    log(f"PROMPT_LOG_TOKENIZED /// {str(result)[:200]}")
 
                 yield result
 

@@ -52,6 +52,7 @@ def _cmdline_args(acc):
                             "prompt_format": promptops.PF_SUURTOLK,
                             "sharing": "none",
                             "gradckpt": False,
+                            "debug": False,
                             "memcheckkamikaze": False,
                             "sft_output_field": "none",
                             "streamtrain": False,
@@ -225,7 +226,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         ddp_find_unused_parameters=False,
         #dataloader_num_workers=1,
         #group_by_length=True,
-        log_level="debug",
+        log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
         accelerator_config={ 'dispatch_batches': False },
         #gradient_checkpointing=True,
@@ -239,17 +240,13 @@ def get_training_args(cmdline_args, acc, total_batches):
 
 class BatchTrackingTrainer(Trainer):
     def training_step(self, model, inputs, *args, **kwargs):
-        # 'inputs' is your current minibatch!
-        # Execute your custom 'on_step_begin' logic right here.
         #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
         log_msg = " / ".join([f"{k}" for k in inputs.keys()])
 
         log(f"BATCH_LOG_DATA: {log_msg}")
 
-        # Execute the standard forward and backward pass
         loss = super().training_step(model, inputs, *args, **kwargs)
 
-        # Execute your custom 'on_step_end' logic right here.
         log(f"BATCH_LOG_LOSS: {loss.item()}")
 
         return loss
@@ -291,8 +288,8 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    #trainer = BatchTrackingTrainer(
-    trainer = Trainer(
+    TrainerClass = BatchTrackingTrainer if cmd_args.debug else Trainer
+    trainer = TrainerClass(
         model=model,
         args=training_args,
         train_dataset=tokenized_train_data,
@@ -301,8 +298,9 @@ def simple_train(acc):
         callbacks=clbks,
     )
 
-    trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
-    logging.set_verbosity_debug()
+    #trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
+    if cmd_args.debug:
+        logging.set_verbosity_debug()
 
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
