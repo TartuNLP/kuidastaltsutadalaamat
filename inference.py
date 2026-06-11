@@ -169,12 +169,12 @@ def _cmdline_args():
                        kw_arg_dict={"debug": False,
                                     "input_file": "none",
                                     "output_file": "none",
-                                    "multiproc": False,
-                                    "synchronize": True,
-                                    "max_len": 2000,
+                                    "multiproc": True,
+                                    "synchronize": False,
+                                    "max_len": 4096,
                                     "filter_eurollm": False,
                                     "do_probs": False,
-                                    "prompt_format": promptops.PF_ALPACA})
+                                    "prompt_format": promptops.PF_SUURTOLK})
 
     if args.input_file == "none":
         args.input_file = None
