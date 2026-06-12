@@ -22,7 +22,7 @@ def data_gen(filename, tokenizer, more_args):
 
             labels = [
                 -100 if m else t
-                for t, m in zip(tokenized["input_ids"], tokenized["special_tokens_map"])
+                for t, m in zip(tokenized["input_ids"], tokenized["special_tokens_mask"])
             ]
 
             yield { 'input_ids': tokenized["input_ids"],
