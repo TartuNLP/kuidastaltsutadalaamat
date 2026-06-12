@@ -1,3 +1,4 @@
+from aux import log
 
 # first, keyword identifiers for selecting prompt templates in scripts:
 
@@ -306,3 +307,62 @@ MULTILING_MSG = {
 #EUROLLM_USER_MSG_TEMPLATE = " ""{hi_segm}
 #{postinstruction}" ""
 """
+
+
+def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
+    if for_inf:
+        tokens = tokenizer(
+            entry,
+            truncation=True,
+            max_length=max_len,
+            return_attention_mask=True,
+            return_tensors="pt"
+        )
+    else:
+        tokens = tokenizer(
+            entry,
+            truncation=True,
+            max_length=max_len,
+            return_attention_mask=True
+        )
+
+    if add_eos:
+        tokens['attention_mask'].append(1)
+        tokens['input_ids'].append(tokenizer.eos_token_id)
+
+    return tokens
+
+
+def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
+    # Return plain Python lists; let the collator pad & build labels.
+
+    #try:
+    prompt = prep_prompt(entry, selfx.prompt_format)
+    result = tokenize_str(tokenizr, prompt)
+    result['special_tokens_mask'] = [False] * len(result['input_ids'])
+    if selfx.sft_delim is not None:
+        delim_id = tokenizr.convert_tokens_to_ids(selfx.sft_delim)
+
+        try:
+            delim_idx = result['input_ids'].index(delim_id)
+            result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+        except ValueError:
+            rep_prompt_cand = str(entry)
+            rep_prompt = rep_prompt_cand if len(rep_prompt_cand) <= 400 else rep_prompt_cand[:400] + "..."
+            log(f"STRANGE WARNING: prompt {rep_prompt} "
+                f"is supposedly missing the delimiter {selfx.sft_delim}; whole entry passed for learning")
+
+    elif selfx.sft_output_field is not None:
+        no_output_prompt = prep_prompt(data={**entry, selfx.sft_output_field: ''},
+                                                 prompt_format=selfx.prompt_format)
+        no_output_prompt_tok = tokenize_str(tokenizr, no_output_prompt)
+        len_to_mask = len(no_output_prompt_tok['input_ids'])
+        result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
+
+    return result
+
+    #except:
+    #    log("Broken data entry, returning a dummy instead")
+    #    prompt = "dummy"
+    #    result = tokenize_str(selfx.tokenizer, prompt)
+    #    return result
