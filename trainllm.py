@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 
-from torch.utils.data import SequentialSampler
-
 import promptops
 from aux import log, CmdlineArgs, env_stuff
 from modelops import load_model, load_tokenizer
-from data import load_training_data
+from pretok import load_training_data
 
 import subprocess
-import types
 
 import torch
 if not hasattr(torch, "float8_e8m0fnu"):
@@ -26,11 +23,12 @@ from accelerate import Accelerator, InitProcessGroupKwargs
 from transformers import (
     TrainingArguments,
     Trainer,
-    DataCollatorForLanguageModeling,
     TrainerCallback,
-    logging
+    logging,
+    DataCollatorForSeq2Seq
 )
 from collections import namedtuple
+
 #from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
 
 MEM_CHECK_KAMIKAZE = False
@@ -49,14 +47,11 @@ def _cmdline_args(acc):
                          kw_arg_dict={ "continue_training": False, "save_steps": 100, "lr": 1.5e-5,
                             "batch_size": 1024, "nr_sents_per_gpu": 4, "log_steps": 1, "epochs": 4,
                             "max_length": 4096,
-                            "prompt_format": promptops.PF_SUURTOLK,
                             "sharing": "none",
                             "gradckpt": False,
                             "debug": False,
                             "memcheckkamikaze": False,
-                            "sft_output_field": "none",
-                            "streamtrain": False,
-                            "sft_delim": "none"})
+                            "streamtrain": False})
 
     # if the directory args.save_location already exists, raise an exception:
     #if not result.continue_training and os.path.exists(result.save_location):
@@ -281,8 +276,9 @@ def simple_train(acc):
         model.config.pad_token_id = tokenizer.pad_token_id
 
     log(f"Load data", accelerator=acc)
-    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
+    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, cmd_args, proc_nums)
 
+    """
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=True,
@@ -291,8 +287,14 @@ def simple_train(acc):
         mask_replace_prob=0,
         pad_to_multiple_of=8,
     )
+    """
 
-    #data_collator = DataCollatorForCompletionOnlyLM(cmd_args.sft_delim, tokenizer=tokenizer)
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=tokenizer,
+        padding=True,
+        pad_to_multiple_of=8,
+        return_tensors="pt",
+    )
 
     log(f"Preparing to train with {total_batches} steps", accelerator=acc)
 
@@ -339,13 +341,3 @@ if __name__ == "__main__":
     accelerator = Accelerator(kwargs_handlers=[timeout_kwargs])
 
     simple_train(accelerator)
-
-    """
-    try:
-        simple_train(accelerator)
-    except Exception as e:
-        if we_are_main:
-            raise e
-        else:
-            log(f"Skipped the long exception: {e}")
-    """

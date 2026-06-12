@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
-
+import glob
 import sys
 import json
 
-from datasets import Dataset
+from datasets import Dataset, load_dataset
 from collections import namedtuple
 
+from pyarrow import parquet as pq
+
+from aux import log
 from modelops import load_tokenizer
 from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
 
@@ -33,6 +36,47 @@ def jsonl_to_parquet(in_filename, out_filename, tokenizer, more_args):
     dataset = Dataset.from_generator(generator)
 
     dataset.to_parquet(out_filename)
+
+
+def data_sanity_check_and_len(path, cmd_args, proc_nums):
+    files = glob.glob(path)
+    lens = [pq.read_metadata(f).num_rows for f in files]
+
+    assert all(e == lens[0] for e in lens), "Not all training data files have the same number of rows"
+
+    assert len(files) % proc_nums.num_proc == 0, "Number of files is not divisible by number of processes"
+
+    total_lens = sum(lens)
+
+    nr_batches = total_lens // cmd_args.batch_size
+
+    assert nr_batches * cmd_args.batch_size == total_lens, "batch arithmetics is failing us"
+
+    return nr_batches * cmd_args.epochs
+
+
+def load_training_data(path, cmd_args, proc_nums):
+    #proc_nums.proc_idx
+    #proc_nums.num_proc
+
+    full_path = path + "/chunk*.parquet"
+
+    nr_batches = data_sanity_check_and_len(full_path, cmd_args, proc_nums)
+    if proc_nums.proc_idx == 0:
+        log(f"Number of batches for {cmd_args.epochs} epochs: {nr_batches}")
+
+    dataset = load_dataset("parquet", data_files=full_path, split="train", streaming=True)
+
+    # Shard the dataset across your GPUs
+    dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
+
+    # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
+    dataset = dataset.shuffle(buffer_size=10000, seed=42069)
+
+    if cmd_args.epochs > 1:
+        dataset = dataset.repeat(cmd_args.epochs)
+
+    return dataset, nr_batches
 
 
 def cmdline():
@@ -66,36 +110,3 @@ def say_no_to_global_variables():
 
 if __name__ == '__main__':
     say_no_to_global_variables()
-
-"""
-import json
-from datasets import Dataset
-from transformers import AutoTokenizer
-from promptops import prompt_builder_from_entry
-from data import prep_tokenized_prompt_from_entry
-
-# Configuration
-tokenizer = AutoTokenizer.from_pretrained("swiss-ai/Apertus-8B-Instruct-2509")
-jsonl_file = "train_data/chunk_0.jsonl"
-output_parquet = "train_data/chunk_0.parquet"
-
-def gen():
-    with open(jsonl_file, "r") as f:
-        for line in f:
-            entry = json.loads(line)
-            # Leverage your existing logic
-            # Note: You'll want to modify your data.py function to return 'labels' 
-            # instead of just the map, or calculate them here.
-            tokenized = prep_tokenized_prompt_from_entry(entry, None, tokenizer)
-            
-            # Example label logic: mask everything except the assistant output
-            tokenized["labels"] = [
-                t if m == 1 else -100 
-                for t, m in zip(tokenized["input_ids"], tokenized["special_tokens_map"])
-            ]
-            yield tokenized
-
-dataset = Dataset.from_generator(gen)
-dataset.to_parquet(output_parquet)
-print(f"Successfully saved {output_parquet}")
-"""
