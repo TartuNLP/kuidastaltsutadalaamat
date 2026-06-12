@@ -119,13 +119,27 @@ def prep_out_folder(filename, num_threads):
 
 
 def file_to_idx_name(folder, idx):
-    return f"{folder}/{idx}.jsonl"
+    return f"{folder}/{idx:03}.jsonl"
 
 
-def jsonl_to_multiple_files():
-    num_threads = int(sys.argv[1])
-    in_filename = sys.argv[2]
+def load_aux_buf(in_filename, batch_size):
+    result = []
+
+    # load first batch_size lines from in_filename
+    with open(in_filename, 'r') as fh_in:
+        for ii, line in enumerate(fh_in):
+            if ii == batch_size:
+                break
+            result.append(line)
+        return result
+
+
+def jsonl_to_multiple_files(num_threads, batch_size, in_filename):
+    assert batch_size % num_threads == 0, "batch size must be divisible by number of threads"
+
     out_folder = prep_out_folder(in_filename, num_threads)
+
+    aux_buf = load_aux_buf(in_filename, batch_size)
 
     out_fhs = [open(file_to_idx_name(out_folder, i), 'w')
                for i in range(num_threads)]
@@ -139,38 +153,16 @@ def jsonl_to_multiple_files():
 
         #to ensure same size of chunks
         ii += 1
-        while ii % num_threads != 0:
-            out_fhs[ii % num_threads].write(line)
+        while ii % batch_size != 0:
+            out_fhs[ii % num_threads].write(aux_buf.pop(0))
             ii += 1
 
     
 def say_no_to_global_variables():
-    jsonl_to_multiple_files()
+    num_threads = int(sys.argv[1])
+    batch_size = int(sys.argv[2])
+    in_filename = sys.argv[3]
+    jsonl_to_multiple_files(num_threads, batch_size, in_filename)
 
 if __name__ == '__main__':
     say_no_to_global_variables()
-
-
-
-    """
-    if len(sys.argv) > 1:
-        # convert Neurotolge json files to jsonl for training
-        all_data = []
-
-        for input_file in sys.argv[1:]:
-            print(f"Processing {input_file}")
-            neurotolge_json_to_jsonl(input_file)
-    else:
-        # convert one Smugri json file to jsonl for training
-        #flname = sys.stdin.readline().strip()
-        #with open(flname, 'r') as fh_i:
-        for entryy in iter_stdin_json_items(sys.stdin):
-            if not(is_hi(entryy['src_lang']) and is_hi(entryy['tgt_lang'])):
-                gen_out_line(sys.stdout,
-                             entryy['src_segm'],
-                             entryy['tgt_segm'],
-                             entryy['src_lang'],
-                             entryy['tgt_lang'],
-                             entryy['task'],
-                             comet_sc=None)
-    """
