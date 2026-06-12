@@ -61,9 +61,6 @@ def _cmdline_args(acc):
     if result.memcheckkamikaze:
         MEM_CHECK_KAMIKAZE = True
 
-    if result.prompt_format == promptops.PF_SUURTOLK:
-        result.streamtrain = True
-
     log(f"Launched as {result}", accelerator=acc)
 
     return result
