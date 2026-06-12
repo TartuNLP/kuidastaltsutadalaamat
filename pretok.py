@@ -2,6 +2,7 @@
 import glob
 import sys
 import json
+import os
 
 from datasets import Dataset, load_dataset
 from collections import namedtuple
@@ -32,14 +33,17 @@ def data_gen(filename, tokenizer, more_args):
 
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
     for in_filename in in_filenames:
-        log(f"Processing {in_filename}")
-        generator = lambda: data_gen(in_filename, tokenizer, more_args)
-
-        dataset = Dataset.from_generator(generator)
-
         out_filename = in_filename.replace(".jsonl", ".parquet")
 
-        dataset.to_parquet(out_filename)
+        if os.path.exists(out_filename):
+            log(f"{out_filename} exists, skipping")
+        else:
+            log(f"Processing {in_filename}")
+            generator = lambda: data_gen(in_filename, tokenizer, more_args)
+
+            dataset = Dataset.from_generator(generator)
+
+            dataset.to_parquet(out_filename)
 
 
 def data_sanity_check_and_len(path, cmd_args, proc_nums):
@@ -69,7 +73,7 @@ def load_training_data(path, cmd_args, proc_nums):
     if proc_nums.proc_idx == 0:
         log(f"Number of batches for {cmd_args.epochs} epochs: {nr_batches}")
 
-    files = sorted(glob.glob(path + "/chunk*.parquet"))
+    files = sorted(glob.glob(full_path))
     my_file = files[proc_nums.proc_idx]
 
     dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=True)
