@@ -58,18 +58,10 @@ def _cmdline_args(acc):
     if result.nr_sents_per_gpu == 0:
         result.nr_sents_per_gpu = result.batch_size
 
-    if result.sft_delim == "none":
-        result.sft_delim = None
-
-    if result.sft_output_field == "none":
-        result.sft_output_field = None
-
     if result.memcheckkamikaze:
         MEM_CHECK_KAMIKAZE = True
 
     if result.prompt_format == promptops.PF_SUURTOLK:
-        result.sft_output_field = None
-        result.sft_delim = "<|assistant_start|>"
         result.streamtrain = True
 
     log(f"Launched as {result}", accelerator=acc)
