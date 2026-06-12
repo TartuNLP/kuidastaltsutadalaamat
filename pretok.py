@@ -30,12 +30,15 @@ def data_gen(filename, tokenizer, more_args):
                     'attention_mask': tokenized["attention_mask"] }
 
 
-def jsonl_to_parquet(in_filename, out_filename, tokenizer, more_args):
-    generator = lambda: data_gen(in_filename, tokenizer, more_args)
+def jsonl_to_parquet(in_filenames, tokenizer, more_args):
+    for in_filename in in_filenames:
+        generator = lambda: data_gen(in_filename, tokenizer, more_args)
 
-    dataset = Dataset.from_generator(generator)
+        dataset = Dataset.from_generator(generator)
 
-    dataset.to_parquet(out_filename)
+        out_filename = in_filename.replace(".jsonl", ".parquet")
+
+        dataset.to_parquet(out_filename)
 
 
 def data_sanity_check_and_len(path, cmd_args, proc_nums):
@@ -59,7 +62,7 @@ def load_training_data(path, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_proc
 
-    full_path = path + "/chunk*.parquet"
+    full_path = path + "/*.parquet"
 
     nr_batches = data_sanity_check_and_len(full_path, cmd_args, proc_nums)
     if proc_nums.proc_idx == 0:
@@ -82,23 +85,15 @@ def load_training_data(path, cmd_args, proc_nums):
 
 
 def cmdline():
-    in_filename = sys.argv[1]
-    out_filename = sys.argv[2]
-    tokenizer_id = sys.argv[3]
+    tokenizer_id = sys.argv[1]
+    in_files = sys.argv[2:]
 
-    try:
-        prompt_format = sys.argv[4]
-    except IndexError:
-        prompt_format = PF_SUURTOLK
-
-    try:
-        sft_delim = sys.argv[5]
-    except IndexError:
-        sft_delim = "<|assistant_start|>"
+    prompt_format = PF_SUURTOLK
+    sft_delim = "<|assistant_start|>"
 
     args = (namedtuple("CmdArgs",
-                       "input_file output_file tok_id prompt_format sft_delim sft_output_field")
-            (in_filename, out_filename, tokenizer_id, prompt_format, sft_delim, None))
+                       "input_files tok_id prompt_format sft_delim sft_output_field")
+            (in_files, tokenizer_id, prompt_format, sft_delim, None))
 
     return args
 
@@ -108,7 +103,7 @@ def say_no_to_global_variables():
 
     tokenizer = load_tokenizer(cmdargs.tok_id)
 
-    jsonl_to_parquet(cmdargs.input_file, cmdargs.output_file, tokenizer, cmdargs)
+    jsonl_to_parquet(cmdargs.input_files, tokenizer, cmdargs)
 
 if __name__ == '__main__':
     say_no_to_global_variables()
