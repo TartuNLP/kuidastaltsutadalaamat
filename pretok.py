@@ -70,7 +70,6 @@ def load_training_data(path, cmd_args, proc_nums):
 
     dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=True)
 
-    # Shard the dataset across your GPUs
     # dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
