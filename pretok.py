@@ -65,10 +65,13 @@ def load_training_data(path, cmd_args, proc_nums):
     if proc_nums.proc_idx == 0:
         log(f"Number of batches for {cmd_args.epochs} epochs: {nr_batches}")
 
-    dataset = load_dataset("parquet", data_files=full_path, split="train", streaming=True)
+    files = sorted(glob.glob(path + "/chunk*.parquet"))
+    my_file = files[proc_nums.proc_idx]
+
+    dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=True)
 
     # Shard the dataset across your GPUs
-    dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
+    # dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
     dataset = dataset.shuffle(buffer_size=10000, seed=42069)
