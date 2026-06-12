@@ -29,8 +29,6 @@ from transformers import (
 )
 from collections import namedtuple
 
-#from trl import SFTConfig, SFTTrainer, DataCollatorForCompletionOnlyLM
-
 MEM_CHECK_KAMIKAZE = False
 
 """
@@ -281,7 +279,7 @@ def simple_train(acc):
     """
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
-        mlm=True,
+        mlm=True, 
         mlm_probability=1,
         random_replace_prob=0,
         mask_replace_prob=0,
