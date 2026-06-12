@@ -58,7 +58,7 @@ def data_sanity_check_and_len(path, cmd_args, proc_nums):
 
     nr_batches = total_lens // cmd_args.batch_size
 
-    assert nr_batches * cmd_args.batch_size == total_lens, f"batch arithmetics is failing us, nr_batches * cmd_args.batch_size != total_lens"
+    assert nr_batches * cmd_args.batch_size == total_lens, f"batch arithmetics is failing us, {nr_batches} * {cmd_args.batch_size} != {total_lens}"
 
     return nr_batches * cmd_args.epochs
 
