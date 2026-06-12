@@ -32,6 +32,7 @@ def data_gen(filename, tokenizer, more_args):
 
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
     for in_filename in in_filenames:
+        log(f"Processing {in_filename}")
         generator = lambda: data_gen(in_filename, tokenizer, more_args)
 
         dataset = Dataset.from_generator(generator)
