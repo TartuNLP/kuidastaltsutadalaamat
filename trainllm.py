@@ -224,7 +224,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         # Optional but often helpful on LUMI/ROCm if you enable it in your args:
         bf16=True,
         ddp_find_unused_parameters=False,
-        #dataloader_num_workers=1,
+        dataloader_num_workers=4,
         #group_by_length=True,
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
