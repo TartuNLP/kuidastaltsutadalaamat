@@ -76,15 +76,18 @@ def load_training_data(path, cmd_args, proc_nums):
     files = sorted(glob.glob(full_path))
     my_file = files[proc_nums.proc_idx]
 
-    dataset = load_dataset("parquet", data_files=[my_file], split="train")
+    dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=cmd_args.streamtrain)
 
     # dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
-    dataset = dataset.shuffle(seed=42069)
+    if cmd_args.streamtrain:
+        dataset = dataset.shuffle(buffer_size=1000, seed=42069)
 
-    #if cmd_args.epochs > 1:
-    #    dataset = dataset.repeat(cmd_args.epochs)
+        if cmd_args.epochs > 1:
+            dataset = dataset.repeat(cmd_args.epochs)
+    else:
+        dataset = dataset.shuffle(seed=42069)
 
     return dataset, nr_batches
 
