@@ -9,6 +9,9 @@ from collections import namedtuple
 
 from pyarrow import parquet as pq
 
+from multiprocessing import Pool
+from functools import partial
+
 from aux import log
 from modelops import load_tokenizer
 from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
@@ -31,19 +34,25 @@ def data_gen(filename, tokenizer, more_args):
                     'attention_mask': tokenized["attention_mask"] }
 
 
+def convert_chunk(in_filename, tokenizer, more_args):
+    out_filename = in_filename.replace(".jsonl", ".parquet")
+
+    if os.path.exists(out_filename):
+        log(f"{out_filename} exists, skipping")
+    else:
+        log(f"Processing {in_filename}")
+        generator = lambda: data_gen(in_filename, tokenizer, more_args)
+
+        dataset = Dataset.from_generator(generator)
+
+        dataset.to_parquet(out_filename)
+
+
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
-    for in_filename in in_filenames:
-        out_filename = in_filename.replace(".jsonl", ".parquet")
+    worker = partial(convert_chunk, tokenizer=tokenizer, more_args=more_args)
 
-        if os.path.exists(out_filename):
-            log(f"{out_filename} exists, skipping")
-        else:
-            log(f"Processing {in_filename}")
-            generator = lambda: data_gen(in_filename, tokenizer, more_args)
-
-            dataset = Dataset.from_generator(generator)
-
-            dataset.to_parquet(out_filename)
+    with Pool() as pool:
+        pool.map(worker, in_filenames)
 
 
 def data_sanity_check_and_len(path, cmd_args, proc_nums):
