@@ -191,7 +191,7 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
     return dataset
 
 
-def load_training_data_old(path, tokenizer, cmd_args, proc_nums):
+def load_training_data_jsonl(path, tokenizer, cmd_args, proc_nums):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,

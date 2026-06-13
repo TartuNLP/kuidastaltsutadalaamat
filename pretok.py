@@ -63,7 +63,7 @@ def data_sanity_check_and_len(path, cmd_args, proc_nums):
     return nr_batches * cmd_args.epochs
 
 
-def load_training_data(path, cmd_args, proc_nums):
+def load_training_data_pq_pretok(path, cmd_args, proc_nums):
     #proc_nums.proc_idx
     #proc_nums.num_proc
 

@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 import promptops
 from aux import log, CmdlineArgs, env_stuff
 from modelops import load_model, load_tokenizer
-from pretok import load_training_data
+from pretok import load_training_data_pq_pretok
+from data import load_training_data_jsonl
 
 import subprocess
 
@@ -25,7 +26,7 @@ from transformers import (
     Trainer,
     TrainerCallback,
     logging,
-    DataCollatorForSeq2Seq
+    DataCollatorForSeq2Seq, DataCollatorForLanguageModeling
 )
 from collections import namedtuple
 
@@ -49,6 +50,7 @@ def _cmdline_args(acc):
                             "gradckpt": False,
                             "debug": False,
                             "memcheckkamikaze": False,
+                            "pretok": False,
                             "streamtrain": False})
 
     # if the directory args.save_location already exists, raise an exception:
@@ -207,7 +209,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         bf16=True,
         ddp_find_unused_parameters=False,
         dataloader_num_workers=0,
-        train_sampling_strategy="group_by_length",
+        #train_sampling_strategy="group_by_length",
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
         accelerator_config={ 'dispatch_batches': False },
@@ -263,25 +265,27 @@ def simple_train(acc):
         model.config.pad_token_id = tokenizer.pad_token_id
 
     log(f"Load data", accelerator=acc)
-    tokenized_train_data, total_batches = load_training_data(cmd_args.train_file, cmd_args, proc_nums)
+    if cmd_args.pretok:
+        tokenized_train_data, total_batches = load_training_data_pq_pretok(cmd_args.train_file, cmd_args, proc_nums)
 
-    """
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=True, 
-        mlm_probability=1,
-        random_replace_prob=0,
-        mask_replace_prob=0,
-        pad_to_multiple_of=8,
-    )
-    """
+        data_collator = DataCollatorForSeq2Seq(
+            tokenizer=tokenizer,
+            padding=True,
+            pad_to_multiple_of=8,
+            return_tensors="pt",
+        )
+    else:
+        tokenized_train_data, total_batches = load_training_data_jsonl(cmd_args.train_file, cmd_args, proc_nums)
 
-    data_collator = DataCollatorForSeq2Seq(
-        tokenizer=tokenizer,
-        padding=True,
-        pad_to_multiple_of=8,
-        return_tensors="pt",
-    )
+
+        data_collator = DataCollatorForLanguageModeling(
+            tokenizer=tokenizer,
+            mlm=True,
+            mlm_probability=1,
+            random_replace_prob=0,
+            mask_replace_prob=0,
+            pad_to_multiple_of=8,
+        )
 
     log(f"Preparing to train with {total_batches} steps", accelerator=acc)
 
