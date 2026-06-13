@@ -48,6 +48,8 @@ def _cmdline_args(acc):
                             "max_length": 4096,
                             "sharing": "none",
                             "prompt_format": "none",
+                            "sft_delim": "none",
+                            "sft_output_field": "none",
                             "gradckpt": False,
                             "debug": False,
                             "memcheckkamikaze": False,
