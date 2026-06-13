@@ -204,15 +204,14 @@ def get_training_args(cmdline_args, acc, total_batches):
         report_to="none",
         lr_scheduler_type = "polynomial",
         weight_decay = 0.1,
-        # Optional but often helpful on LUMI/ROCm if you enable it in your args:
         bf16=True,
         ddp_find_unused_parameters=False,
         dataloader_num_workers=0,
-        #group_by_length=True,
+        group_by_length=True,
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
         accelerator_config={ 'dispatch_batches': False },
-        #gradient_checkpointing=True,
+        gradient_checkpointing=cmdline_args.gradckpt,
         #dataloader_persistent_workers=True
         **dpspd_conf,
         **fsdp_conf,
