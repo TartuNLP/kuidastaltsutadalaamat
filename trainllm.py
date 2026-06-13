@@ -275,7 +275,7 @@ def simple_train(acc):
             return_tensors="pt",
         )
     else:
-        tokenized_train_data, total_batches = load_training_data_jsonl(cmd_args.train_file, cmd_args, proc_nums)
+        tokenized_train_data, total_batches = load_training_data_jsonl(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
 
 
         data_collator = DataCollatorForLanguageModeling(
