@@ -47,6 +47,7 @@ def _cmdline_args(acc):
                             "batch_size": 1024, "nr_sents_per_gpu": 4, "log_steps": 1, "epochs": 4,
                             "max_length": 4096,
                             "sharing": "none",
+                            "prompt_format": "none",
                             "gradckpt": False,
                             "debug": False,
                             "memcheckkamikaze": False,
@@ -276,7 +277,6 @@ def simple_train(acc):
         )
     else:
         tokenized_train_data, total_batches = load_training_data_jsonl(cmd_args.train_file, tokenizer, cmd_args, proc_nums)
-
 
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer,
