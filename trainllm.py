@@ -180,6 +180,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         "Batch size must be divisible by the number of GPUs and nr of sents per GPU"
 
     accum_steps = cmdline_args.batch_size // (cmdline_args.nr_sents_per_gpu * world_size)
+    acc.gradient_accumulation_steps = accum_steps
 
     log(f"Nr of processes (GPUs): {world_size}, "
         f"per-device batch: {cmdline_args.nr_sents_per_gpu}, "
