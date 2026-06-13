@@ -37,7 +37,7 @@ Go through texts iteratively without loading into memory,
 returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(IterableDataset):
-    def __init__(self, path, tokenizer, max_dist=10000, max_length=512,
+    def __init__(self, path, tokenizer, max_length=512,
                  prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None, debug=False):
         self.path = path
         self.tokenizer = tokenizer
@@ -45,7 +45,6 @@ class LazyTokenizingIterDataset(IterableDataset):
         self.prompt_format = prompt_format
         self.sft_delim = sft_delim
         self.sft_output_field = sft_output_field
-        self.max_dist = max_dist
         self.debug = debug
 
         self.d_iter = None
@@ -106,31 +105,6 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 yield result
 
-    """
-    def __getitem__(self, idx):
-        if self._curr_idx > idx:
-            self._restart_iters()
-
-        #assert idx % self.proc_nums.num_proc == self.proc_nums.proc_idx, f"MESS IN THREADS ({idx} % {self.proc_nums.num_proc} != {self.proc_nums.proc_idx})"
-
-        line_idx = idx // self.proc_nums.num_proc
-
-        msg = f"LINES SKIPPED: {self._curr_idx + 1} should be equal to {line_idx} = {idx} // {self.proc_nums.num_proc}"
-        assert self._curr_idx + 1 == line_idx, msg
-
-        self._curr_idx += 1
-        item_rawstr = next(self.d_iter)
-        item = json.loads(item_rawstr)
-
-        # !!! TODO_for_later: if it is too long or etc, then we skip it
-
-        if item is None:
-            raise Exception(f"This should not have happened: {self._curr_idx}, {idx} ({self.proc_nums.proc_idx})")
-
-        result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
-
-        return result
-"""
 
 class LazyTokenizingInferenceDataset(TorchDataset):
     def __init__(self, texts, tokenizer, prompt_format, max_length=512, debug=False):
@@ -178,16 +152,6 @@ def get_data_loader(path, prompt_format, tokenizer, debug=False):
 
     dataset = LazyTokenizingInferenceDataset(inputs, tokenizer, prompt_format, debug=debug)
 
-    """
-    data_coll = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer,
-        mlm=False,
-        pad_to_multiple_of=None,  # helps performance; set None if you prefer exact lengths
-    )
-
-    data_loader = DataLoader(dataset, collate_fn=data_coll, batch_size=1)
-    """
-
     return dataset
 
 
@@ -195,13 +159,14 @@ def load_training_data_jsonl(path, tokenizer, cmd_args, proc_nums):
 
     if cmd_args.streamtrain:
         train_set_iter = LazyTokenizingIterDataset(path, tokenizer,
-                                               cmd_args.batch_size+3,
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
                                                cmd_args.sft_output_field, proc_nums=proc_nums)
     else:
-        with open(path, "r") as f:
+        raise Exception("Not implemented")
+
+        with open(file_to_idx_name(path, proc_nums.proc_idx), "r") as f:
             data = json.load(f)
 
         train_set_iter = LazyTokenizingDataset(data, tokenizer,
