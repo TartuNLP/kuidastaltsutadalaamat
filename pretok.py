@@ -9,9 +9,6 @@ from collections import namedtuple
 
 from pyarrow import parquet as pq
 
-from multiprocessing import Pool
-from functools import partial
-
 from aux import log
 from modelops import load_tokenizer
 from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
@@ -49,10 +46,8 @@ def convert_chunk(in_filename, tokenizer, more_args):
 
 
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
-    worker = partial(convert_chunk, tokenizer=tokenizer, more_args=more_args)
-
-    with Pool() as pool:
-        pool.map(worker, in_filenames)
+    for in_filename in in_filenames:
+        convert_chunk(in_filename, tokenizer, more_args)
 
 
 def data_sanity_check_and_len(path, cmd_args, proc_nums):
