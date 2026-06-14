@@ -376,7 +376,6 @@ def simplification_instructions(filename, entry):
     """
     do_instr(INSTR_SIMPLIFY.format(lang="Estonian"), entry['original'], entry['simpl_final'])
 
-
 def say_no_to_global_variables():
     cmd = sys.argv[1]
 
