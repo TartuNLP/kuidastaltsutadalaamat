@@ -102,10 +102,11 @@ def cmdline():
 
     prompt_format = PF_SUURTOLK
     sft_delim = "<|assistant_start|>"
+    max_length = 4096
 
     args = (namedtuple("CmdArgs",
-                       "input_files tok_id prompt_format sft_delim sft_output_field")
-            (in_files, tokenizer_id, prompt_format, sft_delim, None))
+                       "input_files tok_id prompt_format sft_delim sft_output_field max_length")
+            (in_files, tokenizer_id, prompt_format, sft_delim, None, max_length))
 
     return args
 

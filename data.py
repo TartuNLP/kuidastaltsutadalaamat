@@ -37,7 +37,7 @@ Go through texts iteratively without loading into memory,
 returning tokenized tensors for readily formed prompts.
 """
 class LazyTokenizingIterDataset(IterableDataset):
-    def __init__(self, path, tokenizer, max_length=512,
+    def __init__(self, path, tokenizer, max_length=4096,
                  prompt_format="raw", sft_delim=None, sft_output_field=None, proc_nums=None, debug=False):
         self.path = path
         self.tokenizer = tokenizer
@@ -73,9 +73,6 @@ class LazyTokenizingIterDataset(IterableDataset):
             log(f"Length computed: {result}")
 
         return result
-
-    #def __len__(self):
-    #    return self.data_len
 
     def ___restart_iters(self):
         if self.proc_nums.proc_idx == 0 and self.debug:

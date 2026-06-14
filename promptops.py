@@ -309,12 +309,12 @@ MULTILING_MSG = {
 """
 
 
-def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
+def tokenize_str(tokenizer, entry, add_eos=True, max_length=4096, for_inf=False):
     if for_inf:
         tokens = tokenizer(
             entry,
             truncation=True,
-            max_length=max_len,
+            max_length=max_length,
             return_attention_mask=True,
             return_tensors="pt"
         )
@@ -322,7 +322,7 @@ def tokenize_str(tokenizer, entry, add_eos=True, max_len=3000, for_inf=False):
         tokens = tokenizer(
             entry,
             truncation=True,
-            max_length=max_len,
+            max_length=max_length,
             return_attention_mask=True
         )
 
@@ -338,7 +338,7 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
 
     #try:
     prompt = prep_prompt(entry, selfx.prompt_format)
-    result = tokenize_str(tokenizr, prompt)
+    result = tokenize_str(tokenizr, prompt, max_length=selfx.max_length)
     result['special_tokens_mask'] = [False] * len(result['input_ids'])
     if selfx.sft_delim is not None:
         delim_id = tokenizr.convert_tokens_to_ids(selfx.sft_delim)
@@ -355,7 +355,7 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
     elif selfx.sft_output_field is not None:
         no_output_prompt = prep_prompt(data={**entry, selfx.sft_output_field: ''},
                                                  prompt_format=selfx.prompt_format)
-        no_output_prompt_tok = tokenize_str(tokenizr, no_output_prompt)
+        no_output_prompt_tok = tokenize_str(tokenizr, no_output_prompt, max_length=selfx.max_length)
         len_to_mask = len(no_output_prompt_tok['input_ids'])
         result['special_tokens_mask'][:len_to_mask] = [True] * len_to_mask
 
