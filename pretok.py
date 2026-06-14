@@ -4,7 +4,7 @@ import sys
 import json
 import os
 
-from datasets import Dataset, load_dataset, disable_progress_bar
+from datasets import Dataset, load_dataset
 from collections import namedtuple, defaultdict
 
 from pyarrow import parquet as pq
@@ -59,7 +59,6 @@ def convert_chunk(in_filename, tokenizer, more_args):
 
 
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
-    disable_progress_bar()
     for in_filename in in_filenames:
         convert_chunk(in_filename, tokenizer, more_args)
 
