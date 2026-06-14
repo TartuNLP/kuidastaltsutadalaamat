@@ -10,6 +10,16 @@ from aux import log
 IndiCorr = namedtuple('IndiCorr', 'err_class correction')
 
 
+INSTR_LONGSUM = "Write a summary of this {lang} text segment"
+INSTR_SHORTSUM = "Write a short summary of this {lang} text segment"
+INSTR_BULLETSUM = "Write a short bullet-point summary of this {lang} text segment"
+INSTR_LONGDESUM = "Generate a full text segment in {lang} based on a long summary"
+INSTR_SHORTDESUM = "Generate a full text segment in {lang} based on a long summary"
+INSTR_BULLETDESUM = "Generate a full text segment in {lang} based on a long summary"
+
+INSTR_SIMPLIFY = "Simplify this {lang} text segment"
+
+
 INSTR_GEC = "Correct the orthographic, grammatical and other errors in this {synth}{lang} text segment"
 
 INSTR_GECSNT = "Correct the orthographic, grammatical and other errors in this {synth}Estonian sentence{context}"
@@ -308,21 +318,63 @@ def est_gee_to_instr(entry):
         entry['pikk'])
 
 
-def est_gecde_to_instructions():
+def jsonl_to_instructions(func)
     filename = sys.argv[2]
 
     with open(filename, 'r') as fh_in:
         for raw_line in fh_in:
             entry = json.loads(raw_line)
 
-            if "ged/" in filename:
-                est_ged_to_instr(entry)
-            elif "gee/" in filename:
-                est_gee_to_instr(entry)
-            elif "gec/" in filename:
-                if "ut_l2" in filename:
-                    entry['filter_lvl'] = 'itsok'
-                est_gec_to_instr(entry, "synth" in filename)
+            func(filename, entry)
+
+
+def est_gecde_to_instructions(filename, entry):
+    if "ged/" in filename:
+        est_ged_to_instr(entry)
+    elif "gee/" in filename:
+        est_gee_to_instr(entry)
+    elif "gec/" in filename:
+        if "ut_l2" in filename:
+            entry['filter_lvl'] = 'itsok'
+        est_gec_to_instr(entry, "synth" in filename)
+
+def summarization_instructions(filename, entry):
+    """
+    {
+  "text": "Marje Oona on nördinud, et poliitilise
+  "long_summary": "Immunoprofülaktika ekspertkomi
+  "short_summary": "Peremeditsiini kaasprofessor M
+  "bulletpoints": [
+    "Marje Oona kritiseerib poliitikute vaktsineer
+    "Valeinfo kummutamine Indias kasutatavate ravi
+    "Rõhutab vaktsiinide olulisust COVID-19 vastu
+    "Indias pandeemia laastav mõju ja vaktsineeri
+    "Üleskutse poliitikutele aidata kriisi lahend
+  ],
+  "timestamp": "2021/11/29 20:41:26",
+  "url": "https://tervise.geenius.ee/rubriik/uudis
+  "source": "mC4"
+}
+    """
+    bullets = "\n".join(entry['bulletpoints'])
+
+    do_instr(INSTR_LONGSUM.format(lang="Estonian"), entry['text'], entry['long_summary'])
+    do_instr(INSTR_SHORTSUM.format(lang="Estonian"), entry['text'], entry['short_summary'])
+    do_instr(INSTR_BULLETSUM.format(lang="Estonian"), entry['text'], bullets)
+    do_instr(INSTR_LONGDESUM.format(lang="Estonian"), entry['long_summary'], entry['text'])
+    do_instr(INSTR_SHORTDESUM.format(lang="Estonian"), entry['short_summary'], entry['text'])
+    do_instr(INSTR_BULLETDESUM.format(lang="Estonian"), bullets, entry['text'])
+
+def simplification_instructions(filename, entry):
+    """
+ {
+  "src": "GPT4.0",
+  "original": "Kõige sademerikkamad kuud on detsember (232 mm) ja november (229 mm), kõige sademevaesemad kuud juuni (51 mm) ja september (64 mm).",
+  "simpl_lex": "Kõige rohkem sajab detsembris (232 mm) ja novembris (229 mm), kõige vähem sajab juunis (51 mm) ja septembris (64 mm).",
+  "simpl_final": "Detsembris sajab kõige rohkem, 232 mm. Novembris sajab ka palju, 229 mm. Kõige vähem sajab aga juunis, ainult 51 mm, ja septembris, 64 mm."
+}
+    """
+    do_instr(INSTR_SIMPLIFY.format(lang="Estonian"), entry['original'], entry['simpl_final'])
 
 
 def say_no_to_global_variables():
@@ -331,7 +383,11 @@ def say_no_to_global_variables():
     if cmd == 'multigec':
         multigec_to_instructions()
     elif cmd == 'estgecde':
-        est_gecde_to_instructions()
+        jsonl_to_instructions(est_gecde_to_instructions)
+    elif cmd == 'sum':
+        jsonl_to_instructions(summarization_instructions)
+    elif cmd == 'simp':
+        jsonl_to_instructions(simplification_instructions)
     else:
         raise Exception(f"Unknown command: {cmd}")
 
