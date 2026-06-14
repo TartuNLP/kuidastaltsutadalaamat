@@ -4,7 +4,7 @@ import sys
 import json
 import os
 
-from datasets import Dataset, load_dataset
+from datasets import Dataset, load_dataset, disable_progress_bar
 from collections import namedtuple
 
 from pyarrow import parquet as pq
@@ -15,8 +15,8 @@ from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
 
 
 def data_gen(filename, tokenizer, more_args):
-    with (open(filename, 'r') as fh):
-        for line in fh:
+    with open(filename, 'r') as fh:
+        for i, line in enumerate(fh):
             entry = json.loads(line)
 
             tokenized = prep_tokenized_prompt_from_entry(entry, more_args, tokenizer)
@@ -28,11 +28,12 @@ def data_gen(filename, tokenizer, more_args):
 
             length = len(tokenized["input_ids"])
 
-            bucket = "<1024" if length < 1024 else \
-                     "<2048" if length < 2048 else \
-                     "<4096" if length < 4096 else ">4096"
+            bucket = "<512" if length <= 512 else \
+                     "<1024" if length <= 1024 else \
+                     "<2048" if length <= 2048 else \
+                     "<4096" if length <= 4096 else ">4096"
 
-            print(f"{length}\t{bucket}")
+            print(f"{i}\t{length}\t{bucket}")
 
             yield { 'input_ids': tokenized["input_ids"],
                     'labels': labels,
@@ -54,6 +55,7 @@ def convert_chunk(in_filename, tokenizer, more_args):
 
 
 def jsonl_to_parquet(in_filenames, tokenizer, more_args):
+    disable_progress_bar()
     for in_filename in in_filenames:
         convert_chunk(in_filename, tokenizer, more_args)
 
