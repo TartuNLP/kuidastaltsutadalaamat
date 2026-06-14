@@ -5,7 +5,7 @@ import json
 import os
 
 from datasets import Dataset, load_dataset, disable_progress_bar
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from pyarrow import parquet as pq
 
@@ -15,6 +15,8 @@ from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
 
 
 def data_gen(filename, tokenizer, more_args):
+    stats = defaultdict(int)
+
     with open(filename, 'r') as fh:
         for i, line in enumerate(fh):
             entry = json.loads(line)
@@ -33,11 +35,14 @@ def data_gen(filename, tokenizer, more_args):
                      "<2048" if length <= 2048 else \
                      "<4096" if length <= 4096 else ">4096"
 
-            print(f"{i}\t{length}\t{bucket}")
+            #print(f"{i}\t{length}\t{bucket}")
+            stats[bucket] += 1
 
             yield { 'input_ids': tokenized["input_ids"],
                     'labels': labels,
                     'attention_mask': tokenized["attention_mask"] }
+    for k, v in stats.items():
+        print(f"{k}: {v}")
 
 
 def convert_chunk(in_filename, tokenizer, more_args):
