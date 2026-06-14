@@ -15,7 +15,7 @@ from promptops import prep_tokenized_prompt_from_entry, PF_SUURTOLK
 
 
 def data_gen(filename, tokenizer, more_args):
-    with open(filename, 'r') as fh:
+    with (open(filename, 'r') as fh):
         for line in fh:
             entry = json.loads(line)
 
@@ -25,6 +25,14 @@ def data_gen(filename, tokenizer, more_args):
                 -100 if m else t
                 for t, m in zip(tokenized["input_ids"], tokenized["special_tokens_mask"])
             ]
+
+            length = len(tokenized["input_ids"])
+
+            bucket = "<1024" if length < 1024 else \
+                     "<2048" if length < 2048 else \
+                     "<4096" if length < 4096 else ">4096"
+
+            print(f"{length}\t{bucket}")
 
             yield { 'input_ids': tokenized["input_ids"],
                     'labels': labels,
