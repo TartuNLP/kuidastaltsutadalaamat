@@ -18,7 +18,7 @@ def data_gen(filename, tokenizer, more_args):
     stats = defaultdict(int)
 
     with open(filename, 'r') as fh:
-        for i, line in enumerate(fh):
+        for line in fh:
             entry = json.loads(line)
 
             tokenized = prep_tokenized_prompt_from_entry(entry, more_args, tokenizer)
@@ -35,7 +35,6 @@ def data_gen(filename, tokenizer, more_args):
                      "<2048" if length <= 2048 else \
                      "<4096" if length <= 4096 else ">4096"
 
-            #print(f"{i}\t{length}\t{bucket}")
             stats[bucket] += 1
 
             yield { 'input_ids': tokenized["input_ids"],
