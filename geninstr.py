@@ -318,7 +318,7 @@ def est_gee_to_instr(entry):
         entry['pikk'])
 
 
-def jsonl_to_instructions(func)
+def jsonl_to_instructions(func):
     filename = sys.argv[2]
 
     with open(filename, 'r') as fh_in:
