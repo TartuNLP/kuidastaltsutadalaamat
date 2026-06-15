@@ -244,9 +244,10 @@ class NoNanTrainer(NoShardTrainer):
         loss = super().training_step(model, inputs, *args, **kwargs)
 
         if torch.isnan(loss):
-            log(f"PROBLEM: inputs  {inputs['input_ids']}")
+            log(f"PROBLEM: loss {loss}")
+            log(f"PROBLEM: inputs {inputs['input_ids']}")
             log(f"PROBLEM: outputs {inputs['labels']}")
-            log(f"PROBLEM: vocab size{model.config.vocab_size}, max label value {max(inputs["labels"])}")
+            log(f"PROBLEM: max label value {max(inputs["labels"])}")
             raise Exception("NaN loss")
 
         return loss
