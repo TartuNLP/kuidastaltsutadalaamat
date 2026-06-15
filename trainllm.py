@@ -13,6 +13,8 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
+#torch.autograd.set_detect_anomaly(True)
+
 import accelerate
 
 accelerate.optimizer.AcceleratedOptimizer.defaults = property(
@@ -245,6 +247,12 @@ class BatchTrackingTrainer(NoShardTrainer):
         log(f"BATCH_LOG_DATA: {log_msg}")
 
         loss = super().training_step(model, inputs, *args, **kwargs)
+
+        if torch.isnan(loss):
+            log(f"PROBLEM: inputs  {inputs['input_ids']}")
+            log(f"PROBLEM: outputs {inputs['labels']}")
+            log(f"PROBLEM: vocab size{model.config.vocab_size}, max label value {max(inputs["labels"])}")
+            raise Exception("NaN loss")
 
         log(f"BATCH_LOG_LOSS: {loss.item()}")
 
