@@ -218,7 +218,7 @@ def and_i_called_this_function_do_main_too():
         log("Not launched in multi-processing mode, exiting non-main process.")
         sys.exit(0)
 
-    tokenizer = load_tokenizer(args.mdl_id, acc)
+    tokenizer = load_tokenizer(args.mdl_id, acc, left_padding=True)
 
     data_loader = get_data_loader(args.input_file, args.prompt_format, tokenizer, debug=args.debug)
 

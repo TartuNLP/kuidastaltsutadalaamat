@@ -23,10 +23,10 @@ def load_model(mdl_id, device, accelerator=None, attention="flash_attention_2"):
     return model
 
 
-def load_tokenizer(mdl_id, accelerator=None):
+def load_tokenizer(mdl_id, accelerator=None, left_padding=False):
     log(f"Load tokenizer", accelerator=accelerator)
     tokenizer = AutoTokenizer.from_pretrained(mdl_id)
-    tokenizer.padding_side = "right"
+    tokenizer.padding_side = "left" if left_padding else "right"
 
     tokenizer.pad_token = "<|reserved_special_token_100|>"
     #tokenizer.mask_token = "<|reserved_special_token_130|>"

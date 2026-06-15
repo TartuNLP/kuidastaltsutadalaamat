@@ -346,6 +346,9 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
         try:
             delim_idx = result['input_ids'].index(delim_id)
             result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
+            if not True in result['special_tokens_mask']:
+                log(f"AHHAA! all -100")
+                result['special_tokens_mask'] = [False] * len(result['input_ids'])
         except ValueError:
             rep_prompt_cand = str(entry)
             rep_prompt = rep_prompt_cand if len(rep_prompt_cand) <= 400 else rep_prompt_cand[:400] + "..."
