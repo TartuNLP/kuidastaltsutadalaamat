@@ -239,13 +239,8 @@ class NoShardTrainer(Trainer):
         )
 
 
-class BatchTrackingTrainer(NoShardTrainer):
+class NoNanTrainer(NoShardTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
-        #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
-        log_msg = " / ".join([f"{k}" for k in inputs.keys()])
-
-        log(f"BATCH_LOG_DATA: {log_msg}")
-
         loss = super().training_step(model, inputs, *args, **kwargs)
 
         if torch.isnan(loss):
@@ -253,6 +248,17 @@ class BatchTrackingTrainer(NoShardTrainer):
             log(f"PROBLEM: outputs {inputs['labels']}")
             log(f"PROBLEM: vocab size{model.config.vocab_size}, max label value {max(inputs["labels"])}")
             raise Exception("NaN loss")
+
+        return loss
+
+class BatchTrackingTrainer(NoNanTrainer):
+    def training_step(self, model, inputs, *args, **kwargs):
+        #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
+        log_msg = " / ".join([f"{k}" for k in inputs.keys()])
+
+        log(f"BATCH_LOG_DATA: {log_msg}")
+
+        loss = super().training_step(model, inputs, *args, **kwargs)
 
         log(f"BATCH_LOG_LOSS: {loss.item()}")
 
@@ -303,7 +309,7 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    TrainerClass = BatchTrackingTrainer if cmd_args.debug else NoShardTrainer
+    TrainerClass = BatchTrackingTrainer if cmd_args.debug else NoNanTrainer
     trainer = TrainerClass(
         model=model,
         args=training_args,
