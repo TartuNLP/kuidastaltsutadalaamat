@@ -81,15 +81,13 @@ class LazyTokenizingIterDataset(IterableDataset):
         self.d_iter = open(self._get_this_shard_name(), "r")
 
     def __iter__(self):
-        with open(self._get_this_shard_name(), "r") as fh:
-            for item_rawstr in fh:
+        filename = self._get_this_shard_name()
+        with open(filename, "r") as fh:
+            for i, item_rawstr in enumerate(fh):
                 if self.debug:
-                    log(f"PROMPT_LOG_START")
+                    log(f"PROMPT_LOG: line {i}, file {filename}")
 
                 item = json.loads(item_rawstr)
-
-                if self.debug:
-                    log(f"PROMPT_LOG_LOADED /// {str(item)[:200]}")
 
                 if item is None:
                     raise Exception(
@@ -97,8 +95,8 @@ class LazyTokenizingIterDataset(IterableDataset):
 
                 result = prep_tokenized_prompt_from_entry(item, self, self.tokenizer)
 
-                if self.debug:
-                    log(f"PROMPT_LOG_TOKENIZED /// {str(result)[:200]}")
+                #if self.debug:
+                #    log(f"PROMPT_LOG_TOKENIZED: line {i}, file {filename} /// {str(result)[:200]}")
 
                 yield result
 
@@ -139,7 +137,7 @@ def read_input(path, formt):
     elif formt == promptops.PF_RAWLINES:
         result = fh.readlines()
     else:
-        #result = json.load(fh)
+        #JSONL:
         result = [json.loads(l) for l in fh]
 
     return result
