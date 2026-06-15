@@ -158,7 +158,7 @@ def load_training_data_jsonl(path, tokenizer, cmd_args, proc_nums):
                                                cmd_args.max_length,
                                                cmd_args.prompt_format,
                                                cmd_args.sft_delim,
-                                               cmd_args.sft_output_field, proc_nums=proc_nums)
+                                               cmd_args.sft_output_field, proc_nums=proc_nums, debug=cmd_args.debug)
     else:
         raise Exception("Not implemented")
 
