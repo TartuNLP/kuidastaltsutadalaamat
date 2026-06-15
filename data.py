@@ -139,7 +139,8 @@ def read_input(path, formt):
     elif formt == promptops.PF_RAWLINES:
         result = fh.readlines()
     else:
-        result = json.load(fh)
+        #result = json.load(fh)
+        result = [json.loads(l) for l in fh]
 
     return result
 
