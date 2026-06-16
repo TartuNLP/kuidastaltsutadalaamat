@@ -247,7 +247,6 @@ class NoNanTrainer(NoShardTrainer):
             log(f"PROBLEM: loss {loss}")
             log(f"PROBLEM: inputs {inputs['input_ids']}")
             log(f"PROBLEM: outputs {inputs['labels']}")
-            log(f"PROBLEM: max label value {max(inputs["labels"])}")
             raise Exception("NaN loss")
 
         return loss
