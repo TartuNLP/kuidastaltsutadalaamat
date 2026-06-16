@@ -28,7 +28,7 @@ def load_tokenizer(mdl_id, accelerator=None, left_padding=False):
     tokenizer = AutoTokenizer.from_pretrained(mdl_id)
     tokenizer.padding_side = "left" if left_padding else "right"
 
-    tokenizer.pad_token = "<|reserved_special_token_100|>"
+    #tokenizer.pad_token = "<|reserved_special_token_100|>"
     tokenizer.mask_token = "<|reserved_special_token_130|>"
 
     return tokenizer
