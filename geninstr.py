@@ -116,7 +116,7 @@ def multigec_read_one(filename):
 def get_lang_from_filename(flname):
     result = None
 
-    for cand_lang in "English Estonian German Latvian Russian Swedish Ukrainian".split(" "):
+    for cand_lang in "English Estonian German Latvian Russian Swedish Norwegian Finnish Spanish Ukrainian".split(" "):
         if cand_lang.lower() in flname.lower():
             assert result is None
             result = cand_lang
@@ -365,6 +365,16 @@ def summarization_instructions(filename, entry):
     do_instr(INSTR_SHORTDESUM.format(lang="Estonian"), entry['short_summary'], entry['text'])
     do_instr(INSTR_BULLETDESUM.format(lang="Estonian"), bullets, entry['text'])
 
+def summarization_other_instructions(filename, entry):
+    lang = get_lang_from_filename(filename)
+    assert lang is not None
+
+    if lang == 'Norwegian':
+        do_instr(INSTR_LONGSUM.format(lang="Norwegian (Bokmal)"), entry['document'], entry['summary'])
+    else:
+        do_instr(INSTR_LONGSUM.format(lang=lang), entry['text'], entry['summary'])
+
+
 def simplification_instructions(filename, entry):
     """
  {
@@ -376,6 +386,12 @@ def simplification_instructions(filename, entry):
     """
     do_instr(INSTR_SIMPLIFY.format(lang="Estonian"), entry['original'], entry['simpl_final'])
 
+def simplification_other_instructions(filename, entry):
+    lang = get_lang_from_filename(filename)
+    assert lang is not None
+    do_instr(INSTR_SIMPLIFY.format(lang=lang), entry['text'], entry['simplified'])
+
+
 def say_no_to_global_variables():
     cmd = sys.argv[1]
 
@@ -385,8 +401,12 @@ def say_no_to_global_variables():
         jsonl_to_instructions(est_gecde_to_instructions)
     elif cmd == 'sum':
         jsonl_to_instructions(summarization_instructions)
+    elif cmd == 'othersum':
+        jsonl_to_instructions(summarization_other_instructions)
     elif cmd == 'simp':
         jsonl_to_instructions(simplification_instructions)
+    elif cmd == 'othersimp':
+        jsonl_to_instructions(simplification_other_instructions)
     else:
         raise Exception(f"Unknown command: {cmd}")
 
