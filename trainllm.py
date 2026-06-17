@@ -6,7 +6,6 @@ from xielu.ops.wrappers import XIELUfn
 
 xielu.XIELU = XIELUfn
 
-import promptops
 from aux import log, CmdlineArgs, env_stuff
 from modelops import load_model, load_tokenizer
 from pretok import load_training_data_pq_pretok
