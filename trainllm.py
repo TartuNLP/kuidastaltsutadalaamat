@@ -251,9 +251,8 @@ class NoNanTrainer(NoShardTrainer):
         outputs = model(**inputs)
         logits = outputs.logits
 
-        if torch.isnan(logits).any():
-            log(f"PROBLEMAAA: logits NaN")
-            log(f"PROBLEMAAA: {logits}")
+        if torch.isnan(logits).any() or torch.isinf(logits).any():
+            log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
             raise Exception("NaN logits")
 
         result = super().compute_loss(model, inputs, **kwargs)
