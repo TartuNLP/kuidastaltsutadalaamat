@@ -37,6 +37,9 @@ def data_gen(filename, tokenizer, more_args):
 
             stats[bucket] += 1
 
+            assert length < 4096, "AAA LENGTH OVERFLOW"
+            assert labels[-1] == tokenizer.eos_token_id, "AAA NO END IN SIGHT"
+
             yield { 'input_ids': tokenized["input_ids"],
                     'labels': labels,
                     'attention_mask': tokenized["attention_mask"] }
@@ -115,7 +118,7 @@ def cmdline():
 
     prompt_format = PF_SUURTOLK
     sft_delim = "<|assistant_start|>"
-    max_length = 4096
+    max_length = 4090
 
     args = (namedtuple("CmdArgs",
                        "input_files tok_id prompt_format sft_delim sft_output_field max_length")
