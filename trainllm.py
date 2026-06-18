@@ -248,19 +248,21 @@ class NoShardTrainer(Trainer):
 
 class NoNanTrainer(NoShardTrainer):
     def compute_loss(self, model, inputs, **kwargs):
-        outputs = model(**inputs)
-        logits = outputs.logits
+        #outputs = model(**inputs)
+        #logits = outputs.logits
 
-        if torch.isnan(logits).any() or torch.isinf(logits).any():
-            log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
-            raise Exception("NaN logits")
+        #if torch.isnan(logits).any() or torch.isinf(logits).any():
+        #    log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
+        #    raise Exception("NaN logits")
 
         result = super().compute_loss(model, inputs, **kwargs)
+
         if torch.isnan(result).any():
             log(f"PROBLEMA: loss {result}")
             log(f"PROBLEMA: inputs {inputs['input_ids']}")
             log(f"PROBLEMA: outputs {inputs['labels']}")
             raise Exception("NaN loss again")
+
         return result
 
 
