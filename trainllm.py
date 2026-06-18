@@ -17,7 +17,7 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
-#torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True)
 
 import accelerate
 
@@ -246,6 +246,11 @@ class NoShardTrainer(Trainer):
 
 class NoNanTrainer(NoShardTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
+        for name, param in model.named_parameters():
+            if param.requires_grad and torch.isnan(param).any():
+                log(f"PROBLEM: Weights in {name} are already NaN BEFORE this step.")
+                raise Exception("Pre-existing NaN weights")
+
         loss = super().training_step(model, inputs, *args, **kwargs)
 
         if torch.isnan(loss):
