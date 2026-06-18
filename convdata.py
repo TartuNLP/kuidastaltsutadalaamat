@@ -134,10 +134,10 @@ def load_aux_buf(in_filename, batch_size):
         return result
 
 
-def jsonl_to_multiple_files(num_threads, batch_size, in_filename):
+def jsonl_to_multiple_files(num_threads, batch_size, in_filename, out_folder):
     assert batch_size % num_threads == 0, "batch size must be divisible by number of threads"
 
-    out_folder = prep_out_folder(in_filename, num_threads)
+    #out_folder = prep_out_folder(in_filename, num_threads)
 
     aux_buf = load_aux_buf(in_filename, batch_size)
 
@@ -162,7 +162,8 @@ def say_no_to_global_variables():
     num_threads = int(sys.argv[1])
     batch_size = int(sys.argv[2])
     in_filename = sys.argv[3]
-    jsonl_to_multiple_files(num_threads, batch_size, in_filename)
+    out_folder = sys.argv[4]
+    jsonl_to_multiple_files(num_threads, batch_size, in_filename, out_folder)
 
 if __name__ == '__main__':
     say_no_to_global_variables()
