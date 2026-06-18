@@ -347,11 +347,6 @@ def prep_tokenized_prompt_from_entry(entry, selfx, tokenizr):
         if delim_id in result['input_ids']:
             delim_idx = result['input_ids'].index(delim_id)
             result['special_tokens_mask'][:delim_idx + 1] = [True] * (delim_idx + 1)
-        else:
-            # Mask everything EXCEPT the very last token to prevent NaN division by zero
-            mask = [True] * len(result['input_ids'])
-            mask[-1] = False
-            result['special_tokens_mask'] = mask
 
     elif selfx.sft_output_field is not None:
         no_output_prompt = prep_prompt(data={**entry, selfx.sft_output_field: ''},
