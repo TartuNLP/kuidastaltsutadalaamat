@@ -247,6 +247,24 @@ class NoShardTrainer(Trainer):
 
 
 class NoNanTrainer(NoShardTrainer):
+    def compute_loss(self, model, inputs, **kwargs):
+        outputs = model(**inputs)
+        logits = outputs.logits
+
+        if torch.isnan(logits).any():
+            log(f"PROBLEMAAA: logits NaN")
+            log(f"PROBLEMAAA: {logits}")
+            raise Exception("NaN logits")
+
+        result = super().compute_loss(model, inputs, **kwargs)
+        if torch.isnan(result).any():
+            log(f"PROBLEMA: loss {result}")
+            log(f"PROBLEMA: inputs {inputs['input_ids']}")
+            log(f"PROBLEMA: outputs {inputs['labels']}")
+            raise Exception("NaN loss again")
+        return result
+
+
     def training_step(self, model, inputs, *args, **kwargs):
         for name, param in model.named_parameters():
             if param.requires_grad and torch.isnan(param).any():
