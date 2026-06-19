@@ -269,7 +269,7 @@ class NoNanTrainer(NoShardTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
         for name, param in model.named_parameters():
             if param.requires_grad and torch.isnan(param).any():
-                log(f"PROBLEM: Weights in {name} are already NaN BEFORE this step.")
+                log(f"PROBLEM: Weights in {name} (shape {param.shape})are already NaN BEFORE this step.")
                 raise Exception("Pre-existing NaN weights")
 
         loss = super().training_step(model, inputs, *args, **kwargs)
