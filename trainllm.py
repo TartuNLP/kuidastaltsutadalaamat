@@ -12,7 +12,7 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
-torch.autograd.set_detect_anomaly(True)
+#torch.autograd.set_detect_anomaly(True)
 
 import accelerate
 
@@ -328,7 +328,7 @@ def simple_train(acc):
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
     log(f"Tokenized vocab size: {len(tokenizer)}", accelerator=acc)
 
-    model = load_model(cmd_args.mdl_id, device, acc, attention="sdpa")
+    model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
