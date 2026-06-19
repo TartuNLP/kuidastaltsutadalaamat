@@ -305,7 +305,7 @@ def simple_train(acc):
 
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
 
-    model = load_model(cmd_args.mdl_id, device, acc, attention="eager")
+    model = load_model(cmd_args.mdl_id, device, acc, attention="sdpa")
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
