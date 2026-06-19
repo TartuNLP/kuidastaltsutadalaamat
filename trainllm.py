@@ -251,9 +251,18 @@ class NoNanTrainer(NoShardTrainer):
         #outputs = model(**inputs)
         #logits = outputs.logits
 
+        maxval = inputs['input_ids'].max().item()
+
+        if maxval >= 131072:
+            log(f"PROBLEMX: input_ids contains {maxval} (max value)")
+
         #if torch.isnan(logits).any() or torch.isinf(logits).any():
         #    log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
         #    raise Exception("NaN logits")
+        for name, param in model.named_parameters():
+            if param.requires_grad and torch.isnan(param).any():
+                log(f"PROBLEMA: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
+                raise Exception("Pre-existing NaN weights")
 
         result = super().compute_loss(model, inputs, **kwargs)
 
@@ -267,6 +276,11 @@ class NoNanTrainer(NoShardTrainer):
 
 
     def training_step(self, model, inputs, *args, **kwargs):
+        maxval = inputs['input_ids'].max().item()
+
+        if maxval >= 131072:
+            log(f"PROBLEMY: input_ids contains {maxval} (max value)")
+
         for name, param in model.named_parameters():
             if param.requires_grad and torch.isnan(param).any():
                 log(f"PROBLEM: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
@@ -312,6 +326,7 @@ def simple_train(acc):
 
     if getattr(model.config, "pad_token_id", None) is None:
         model.config.pad_token_id = tokenizer.pad_token_id
+    log(f"Model embeddings: {model.get_input_embeddings().weight.shape}")
 
     log(f"Load data", accelerator=acc)
     if cmd_args.pretok:
