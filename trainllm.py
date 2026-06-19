@@ -269,7 +269,7 @@ class NoNanTrainer(NoShardTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
         for name, param in model.named_parameters():
             if param.requires_grad and torch.isnan(param).any():
-                log(f"PROBLEM: Weights in {name} (shape {param.shape})are already NaN BEFORE this step.")
+                log(f"PROBLEM: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
                 raise Exception("Pre-existing NaN weights")
 
         loss = super().training_step(model, inputs, *args, **kwargs)
@@ -304,6 +304,7 @@ def simple_train(acc):
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
+    log(f"Tokenized vocab size: {len(tokenizer)}", accelerator=acc)
 
     model = load_model(cmd_args.mdl_id, device, acc, attention="sdpa")
     if cmd_args.gradckpt:
