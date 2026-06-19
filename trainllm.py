@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 
-import xielu
-from xielu.ops.wrappers import XIELUfn
+#import xielu
+#from xielu.ops.wrappers import XIELUfn
 
-xielu.XIELU = XIELUfn
+#xielu.XIELU = XIELUfn
 #import torch.nn.functional as F
 #xielu.XIELU = F.silu
 
@@ -305,7 +305,7 @@ def simple_train(acc):
 
     tokenizer = load_tokenizer(cmd_args.mdl_id, acc)
 
-    model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
+    model = load_model(cmd_args.mdl_id, device, acc, attention="eager")
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
