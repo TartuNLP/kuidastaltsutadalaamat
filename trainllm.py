@@ -227,7 +227,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         bf16=True,
         ddp_find_unused_parameters=False,
         dataloader_num_workers=0,
-        max_grad_norm=1.0,
+        max_grad_norm=0.3,
         #train_sampling_strategy="group_by_length",
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
