@@ -102,7 +102,7 @@ def load_training_data_pq_pretok(path, cmd_args, proc_nums):
 
     # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
     if cmd_args.streamtrain:
-        dataset = dataset.shuffle(buffer_size=1000, seed=42069)
+        #dataset = dataset.shuffle(buffer_size=1000, seed=42069)
 
         if cmd_args.epochs > 1:
             dataset = dataset.repeat(cmd_args.epochs)
