@@ -92,6 +92,13 @@ class StepTimerCallback(TrainerCallback):
     def on_step_begin(self, args, state, control, **kwargs):
         self._step_start = datetime.now()
 
+        model = kwargs['model']
+
+        for name, param in model.named_parameters():
+            if torch.isnan(param).any():
+                log(f"PROBLEMUUU: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
+                raise Exception("Pre-existing NaN weights")
+
     # called right after each training step
     def on_step_end(self, args, state, control, **kwargs):
         global MEM_CHECK_KAMIKAZE
@@ -118,6 +125,13 @@ class StepTimerCallback(TrainerCallback):
             log(f"memory measurement done!")
 
             raise KamikazeException
+
+        model = kwargs['model']
+
+        for name, param in model.named_parameters():
+            if torch.isnan(param).any():
+                log(f"PROBLEMIIII: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
+                raise Exception("Pre-existing NaN weights")
 
 
 """
@@ -275,7 +289,7 @@ class NoNanTrainer(NoShardTrainer):
             log(f"PROBLEMY: input_ids contains {maxval} (max value)")
 
         for name, param in model.named_parameters():
-            if param.requires_grad and torch.isnan(param).any():
+            if torch.isnan(param).any():
                 log(f"PROBLEM: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
                 log(f"max input: {maxval}")
                 raise Exception("Pre-existing NaN weights")
@@ -369,18 +383,6 @@ def simple_train(acc):
 
     log(f"All done!", accelerator=acc)
 
-
-"""
-This replaces the trainer, in order to
-print out the final batch when training,
-and commit harakiri. So only for temporary
-debugging-related usage
-"""
-class LoggingKillingTrainer(Trainer):
-    def compute_loss(self, model, inputs, **kwargs):
-        log(f"Here is the batch for training: {inputs}")
-        raise NotImplementedError
-        #return super().compute_loss(model, inputs, **kwargs)
 
 if __name__ == "__main__":
     env_stuff()
