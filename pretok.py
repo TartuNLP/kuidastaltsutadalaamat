@@ -98,16 +98,8 @@ def load_training_data_pq_pretok(path, cmd_args, proc_nums):
 
     dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=cmd_args.streamtrain)
 
-    # dataset = dataset.shard(num_shards=proc_nums.num_proc, index=proc_nums.proc_idx)
-
-    # Shuffle locally within a buffer (mandatory for streaming to ensure local randomness)
-    if cmd_args.streamtrain:
-        #dataset = dataset.shuffle(buffer_size=1000, seed=42069)
-
-        if cmd_args.epochs > 1:
-            dataset = dataset.repeat(cmd_args.epochs)
-    else:
-        dataset = dataset.shuffle(seed=42069)
+    if cmd_args.streamtrain and cmd_args.epochs > 1:
+        dataset = dataset.repeat(cmd_args.epochs)
 
     return dataset, nr_batches
 
