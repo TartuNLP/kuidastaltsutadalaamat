@@ -1,13 +1,6 @@
 #!/usr/bin/env python3
 from datetime import datetime, timedelta
 
-#import xielu
-#from xielu.ops.wrappers import XIELUfn
-
-#xielu.XIELU = XIELUfn
-#import torch.nn.functional as F
-#xielu.XIELU = F.silu
-
 from aux import log, CmdlineArgs, env_stuff
 from modelops import load_model, load_tokenizer
 from pretok import load_training_data_pq_pretok
@@ -260,7 +253,7 @@ class NoNanTrainer(NoShardTrainer):
         #    log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
         #    raise Exception("NaN logits")
         for name, param in model.named_parameters():
-            if param.requires_grad and torch.isnan(param).any():
+            if torch.isnan(param).any():
                 log(f"PROBLEMA: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
                 raise Exception("Pre-existing NaN weights")
 
