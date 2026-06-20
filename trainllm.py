@@ -157,7 +157,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "contiguous_gradients": True
             },
 
-            "gradient_clipping": 1.0,
+            "gradient_clipping": 0.3,
             "steps_per_print": 20,
             "wall_clock_breakdown": False
         }}
