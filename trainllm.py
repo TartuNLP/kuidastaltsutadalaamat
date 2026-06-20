@@ -251,6 +251,32 @@ class NoShardTrainer(Trainer):
             pin_memory=self.args.dataloader_pin_memory,
         )
 
+
+import torch
+import torch.nn.functional as F
+import types
+
+
+def safe_xielu_forward(self, x):
+    x_fp32 = x.to(torch.float32)
+    x_fp32 = torch.clamp(x_fp32, min=-50.0, max=50.0)
+
+    # Note: adjust parameter names if they differ in modeling_apertus.py
+    alpha_p = F.softplus(self.alpha_p.to(torch.float32))
+    alpha_n = F.softplus(self.alpha_n.to(torch.float32))
+    beta = 0.5
+
+    pos_mask = (x_fp32 > 0)
+    neg_mask = ~pos_mask
+
+    out = torch.zeros_like(x_fp32)
+    out[pos_mask] = alpha_p * (x_fp32[pos_mask] ** 2) + beta * x_fp32[pos_mask]
+
+    x_neg = x_fp32[neg_mask]
+    out[neg_mask] = alpha_n * (torch.exp(x_neg) - 1.0) - alpha_n * x_neg + beta * x_neg
+
+    return out.to(x.dtype)
+
 """
 
 class NoNanTrainer(NoShardTrainer):
@@ -338,6 +364,9 @@ def simple_train(acc):
     log(f"Tokenized vocab size: {len(tokenizer)}", accelerator=acc)
 
     model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
+    for module in model.modules():
+        if module.__class__.__name__ == "XIELUActivation":
+            module.forward = types.MethodType(safe_xielu_forward, module)
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
