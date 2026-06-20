@@ -12,8 +12,6 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
-torch.autograd.set_detect_anomaly(True)
-
 import accelerate
 
 accelerate.optimizer.AcceleratedOptimizer.defaults = property(
@@ -328,6 +326,8 @@ def simple_train(acc):
     cmd_args = _cmdline_args(acc)
     proc_nums = namedtuple("ProcNums",
                            ["proc_idx", "num_proc"])(acc.process_index, acc.num_processes)
+    if cmd_args.debug:
+        torch.autograd.set_detect_anomaly(True)
 
     device = None if cmd_args.sharing == "fsdp" else acc.device
 
