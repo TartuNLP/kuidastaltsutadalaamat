@@ -306,11 +306,6 @@ class NoNanTrainer(NoShardTrainer):
 
 class BatchTrackingTrainer(NoNanTrainer):
     def training_step(self, model, inputs, *args, **kwargs):
-        #log_msg = " /// ".join([f"{k}: {inputs[k]}" for k in inputs.keys()])
-        log_msg = " / ".join([f"{k}" for k in inputs.keys()])
-
-        log(f"BATCH_LOG_DATA: {log_msg}")
-
         loss = super().training_step(model, inputs, *args, **kwargs)
 
         log(f"BATCH_LOG_LOSS: {loss.item()}")
