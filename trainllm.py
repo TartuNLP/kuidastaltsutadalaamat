@@ -128,7 +128,7 @@ class StepTimerCallback(TrainerCallback):
 
         for name, param in model.named_parameters():
             if torch.isnan(param).any():
-                log(f"PROBLEMIIII: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
+                log(f"PROBLEMIIII: Weights in {name} (shape {param.shape}) are NaN after this step.")
                 raise Exception("Pre-existing NaN weights")
 
 
@@ -155,7 +155,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "contiguous_gradients": True
             },
 
-            "gradient_clipping": 0.5,
+            "gradient_clipping": 1.0,
             "steps_per_print": 20,
             "wall_clock_breakdown": False
         }}
@@ -225,7 +225,8 @@ def get_training_args(cmdline_args, acc, total_batches):
         bf16=True,
         ddp_find_unused_parameters=False,
         dataloader_num_workers=0,
-        max_grad_norm=0.5,
+        max_grad_norm=1.0,
+        warmup_steps=500,
         #train_sampling_strategy="group_by_length",
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
