@@ -317,6 +317,12 @@ class BatchTrackingTrainer(NoNanTrainer):
 
         return loss
 
+def nan_hook(module, inp, out):
+    if isinstance(out, torch.Tensor) and not out.is_floating_point():
+        return
+    if isinstance(out, torch.Tensor) and (torch.isnan(out).any() or torch.isinf(out).any()):
+        raise RuntimeError(f"NaN/Inf in output of {module.__class__.__name__}")
+
 
 def simple_train(acc):
     cmd_args = _cmdline_args(acc)
@@ -377,6 +383,9 @@ def simple_train(acc):
     #trainer._get_train_sampler = types.MethodType(lambda self, ds: SequentialSampler(ds), trainer)
     if cmd_args.debug:
         logging.set_verbosity_debug()
+
+        for layer in model.modules():
+            layer.register_forward_hook(nan_hook)
 
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
