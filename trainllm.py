@@ -12,7 +12,7 @@ import torch
 if not hasattr(torch, "float8_e8m0fnu"):
     setattr(torch, "float8_e8m0fnu", torch.float32)
 
-#torch.autograd.set_detect_anomaly(True)
+torch.autograd.set_detect_anomaly(True)
 
 import accelerate
 
@@ -157,7 +157,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "contiguous_gradients": True
             },
 
-            "gradient_clipping": 0.3,
+            "gradient_clipping": 0.5,
             "steps_per_print": 20,
             "wall_clock_breakdown": False
         }}
@@ -227,7 +227,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         bf16=True,
         ddp_find_unused_parameters=False,
         dataloader_num_workers=0,
-        max_grad_norm=0.3,
+        max_grad_norm=0.5,
         #train_sampling_strategy="group_by_length",
         log_level="debug" if cmdline_args.debug else "passive",
         optim="adamw_torch",
@@ -255,17 +255,12 @@ class NoShardTrainer(Trainer):
 
 class NoNanTrainer(NoShardTrainer):
     def compute_loss(self, model, inputs, **kwargs):
-        #outputs = model(**inputs)
-        #logits = outputs.logits
 
         maxval = inputs['input_ids'].max().item()
 
         if maxval >= 131072:
             log(f"PROBLEMX: input_ids contains {maxval} (max value)")
 
-        #if torch.isnan(logits).any() or torch.isinf(logits).any():
-        #    log(f"PROBLEM: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}")
-        #    raise Exception("NaN logits")
         for name, param in model.named_parameters():
             if torch.isnan(param).any():
                 log(f"PROBLEMA: Weights in {name} (shape {param.shape}) are already NaN BEFORE this step.")
@@ -305,6 +300,16 @@ class NoNanTrainer(NoShardTrainer):
         return loss
 
 class BatchTrackingTrainer(NoNanTrainer):
+    def compute_loss(self, model, inputs, **kwargs):
+        outputs = model(**inputs)
+        logits = outputs.logits
+        if torch.isnan(logits).any() or torch.isinf(logits).any():
+            log(f"PROBLEMXXX: Logits contain NaN/Inf. Max val: {logits.max()}, Min val: {logits.min()}; all: {logits}")
+            raise Exception("NaN logits")
+
+        result = super().compute_loss(model, inputs, **kwargs)
+        return result
+
     def training_step(self, model, inputs, *args, **kwargs):
         loss = super().training_step(model, inputs, *args, **kwargs)
 
