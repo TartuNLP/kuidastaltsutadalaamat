@@ -251,6 +251,7 @@ class NoShardTrainer(Trainer):
             pin_memory=self.args.dataloader_pin_memory,
         )
 
+"""
 
 class NoNanTrainer(NoShardTrainer):
     def compute_loss(self, model, inputs, **kwargs):
@@ -298,6 +299,7 @@ class NoNanTrainer(NoShardTrainer):
 
         return loss
 
+
 class BatchTrackingTrainer(NoNanTrainer):
     def compute_loss(self, model, inputs, **kwargs):
         outputs = model(**inputs)
@@ -321,7 +323,7 @@ def nan_hook(module, inp, out):
         return
     if isinstance(out, torch.Tensor) and (torch.isnan(out).any() or torch.isinf(out).any()):
         raise RuntimeError(f"NaN/Inf in output of {module.__class__.__name__}")
-
+"""
 
 def simple_train(acc):
     cmd_args = _cmdline_args(acc)
@@ -371,7 +373,7 @@ def simple_train(acc):
 
     training_args = get_training_args(cmd_args, acc, total_batches)
 
-    TrainerClass = BatchTrackingTrainer if cmd_args.debug else NoNanTrainer
+    TrainerClass = NoShardTrainer # BatchTrackingTrainer if cmd_args.debug else NoNanTrainer
     trainer = TrainerClass(
         model=model,
         args=training_args,
@@ -385,8 +387,8 @@ def simple_train(acc):
     if cmd_args.debug:
         logging.set_verbosity_debug()
 
-        for layer in model.modules():
-            layer.register_forward_hook(nan_hook)
+        #for layer in model.modules():
+        #    layer.register_forward_hook(nan_hook)
 
     log(f"Starting training", accelerator=acc)
     trainer.train(resume_from_checkpoint=cmd_args.continue_training)
