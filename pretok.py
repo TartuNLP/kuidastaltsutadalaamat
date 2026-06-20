@@ -94,9 +94,9 @@ def load_training_data_pq_pretok(path, cmd_args, proc_nums):
         log(f"Number of batches for {cmd_args.epochs} epochs: {nr_batches}")
 
     files = sorted(glob.glob(full_path))
-    my_file = files[proc_nums.proc_idx]
+    my_files = files[proc_nums.proc_idx :: proc_nums.num_proc]
 
-    dataset = load_dataset("parquet", data_files=[my_file], split="train", streaming=cmd_args.streamtrain)
+    dataset = load_dataset("parquet", data_files=my_files, split="train", streaming=cmd_args.streamtrain)
 
     if cmd_args.streamtrain and cmd_args.epochs > 1:
         dataset = dataset.repeat(cmd_args.epochs)
