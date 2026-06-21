@@ -144,6 +144,7 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
             'gradient_accumulation_steps': accum_steps,
             "bf16": { "enabled": True },
 
+            "communication_data_type": "fp32",
             "zero_optimization": {
                 "stage": 2,
                 "offload_optimizer": { "device": "none" },
@@ -153,7 +154,6 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "reduce_scatter": True,
                 "reduce_bucket_size": 50000000,
                 "contiguous_gradients": True,
-                "communication_data_type": "fp32",
             },
 
             "gradient_clipping": 1.0,
