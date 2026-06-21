@@ -152,7 +152,8 @@ def get_deepspeed_conf(cmdline_args, accum_steps):
                 "allgather_bucket_size": 50000000,
                 "reduce_scatter": True,
                 "reduce_bucket_size": 50000000,
-                "contiguous_gradients": True
+                "contiguous_gradients": True,
+                "communication_data_type": "fp32"
             },
 
             "gradient_clipping": 1.0,
