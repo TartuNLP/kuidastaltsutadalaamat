@@ -257,7 +257,7 @@ import torch.nn.functional as F
 import types
 
 
-def safe_xielu_forward(self, x):
+def safe_xielu_forward_disabl(self, x):
     x_fp32 = x.to(torch.float32)
     x_fp32 = torch.clamp(x_fp32, min=-50.0, max=50.0)
 
@@ -364,9 +364,10 @@ def simple_train(acc):
     log(f"Tokenized vocab size: {len(tokenizer)}", accelerator=acc)
 
     model = load_model(cmd_args.mdl_id, device, acc, attention="flash_attention_2")
-    for module in model.modules():
-        if module.__class__.__name__ == "XIELUActivation":
-            module.forward = types.MethodType(safe_xielu_forward, module)
+    #for module in model.modules():
+    #    if module.__class__.__name__ == "XIELUActivation":
+    #        module.forward = types.MethodType(safe_xielu_forward, module)
+
     if cmd_args.gradckpt:
         model.gradient_checkpointing_enable()
 
