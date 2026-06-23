@@ -214,7 +214,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         gradient_accumulation_steps=accum_steps,
         #num_train_epochs=cmdline_args.epochs,
         save_steps=cmdline_args.save_steps,
-        save_total_limit=2,
+        save_total_limit=10,
         max_steps=total_batches,
         logging_steps=cmdline_args.log_steps,
         learning_rate=cmdline_args.lr,
@@ -230,7 +230,7 @@ def get_training_args(cmdline_args, acc, total_batches):
         warmup_steps=500,
         #train_sampling_strategy="group_by_length",
         log_level="debug" if cmdline_args.debug else "passive",
-        optim="adamw_torch",
+        optim="adamw_torch_fused",
         accelerator_config={ 'dispatch_batches': False },
         gradient_checkpointing=cmdline_args.gradckpt,
         #dataloader_persistent_workers=True
